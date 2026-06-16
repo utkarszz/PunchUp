@@ -1,4 +1,5 @@
 const Task = require("../models/Task");
+const updateStreak = require("../services/streakService");
 
 const createTask = async (req, res) => {
   try {
@@ -131,6 +132,9 @@ const completeTask = async (req, res) => {
     task.completedAt = new Date();
 
     await task.save();
+
+    // Update the user's streak
+    await updateStreak(req.user._id);
 
     res.status(200).json({
       success: true,
