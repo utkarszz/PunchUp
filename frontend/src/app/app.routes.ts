@@ -15,6 +15,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/public-profile/public-profile.component').then(m => m.PublicProfileComponent)
   },
   {
+    path: 'auth/callback',
+    loadComponent: () => import('./pages/auth-callback/auth-callback.component').then(m => m.AuthCallbackComponent)
+  },
+  {
     path: 'dashboard',
     loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [authGuard]

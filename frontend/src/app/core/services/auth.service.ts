@@ -27,36 +27,30 @@ export class AuthService {
   public isLoaded$ = this.isLoadedSubject.asObservable();
 
   constructor() {
-    this.checkTokenInUrlAndSession();
+    this.checkSession();
   }
 
-  private checkTokenInUrlAndSession() {
-    // 1. First check if a token is in the current URL query parameters (Google Auth callback redirect)
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenFromUrl = urlParams.get('token');
-
-    if (tokenFromUrl) {
-      localStorage.setItem('token', tokenFromUrl);
-      this.clearUrlParams();
-      this.loadUserProfile().subscribe(() => {
-        this.router.navigate(['/dashboard']);
-      });
-      return;
-    }
-
-    // 2. Otherwise check localStorage for existing session
+  private checkSession() {
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
-      this.loadUserProfile().subscribe();
+      this.loadCurrentUser().subscribe();
     } else {
       this.isLoadedSubject.next(true);
     }
   }
 
-  private clearUrlParams() {
-    // Remove query params from the browser URL bar without triggering reload
-    const url = window.location.protocol + "//" + window.location.host + window.location.pathname;
-    window.history.pushState({ path: url }, '', url);
+  public handleOAuthCallback(token: string): Observable<UserProfile | null> {
+    if (!token) {
+      this.isLoadedSubject.next(true);
+      return of(null);
+    }
+    
+    localStorage.setItem('token', token);
+    return this.loadCurrentUser().pipe(
+      tap(() => {
+        this.router.navigate(['/dashboard']);
+      })
+    );
   }
 
   public getToken(): string | null {
@@ -67,7 +61,7 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  public loadUserProfile(): Observable<UserProfile | null> {
+  public loadCurrentUser(): Observable<UserProfile | null> {
     const token = this.getToken();
     if (!token) {
       this.currentUserSubject.next(null);
