@@ -32,20 +32,6 @@ const userSchema = new mongoose.Schema(
       default: ""
     },
 
-    currentStreak: {
-      type: Number,
-      default: 0
-    },
-
-    longestStreak: {
-      type: Number,
-      default: 0
-    },
-
-    totalTasksCompleted: {
-      type: Number,
-      default: 0
-    },
 
     role: {
       type: String,

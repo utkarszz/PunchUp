@@ -7,6 +7,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const streakRoutes = require('./routes/streakRoutes');
 const gridRoutes = require("./routes/gridRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const userRoutes = require("./routes/userRoutes");
 const app = express();
 
 app.use(cors());
@@ -18,6 +19,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/streaks', streakRoutes);
 app.use("/api/grid", gridRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/users", userRoutes);
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
