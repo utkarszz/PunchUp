@@ -18,11 +18,11 @@ import { AuthService } from '../../core/services/auth.service';
           <span class="logo-text">PunchUp</span>
         </div>
         <div class="header-actions">
-          <ng-container *ngIf="!(authService.currentUser$ | async)">
+          <ng-container *ngIf="!authService.isAuthenticated()">
             <button (click)="login()" class="btn btn-secondary btn-sm">Sign In</button>
             <button (click)="login()" class="btn btn-primary btn-sm">Get Started</button>
           </ng-container>
-          <ng-container *ngIf="(authService.currentUser$ | async)">
+          <ng-container *ngIf="authService.isAuthenticated()">
             <a routerLink="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
           </ng-container>
         </div>
@@ -38,10 +38,10 @@ import { AuthService } from '../../core/services/auth.service';
           Create momentum every day.
         </p>
         <div class="cta-group animate-slide-up animate-stagger-4">
-          <ng-container *ngIf="!(authService.currentUser$ | async)">
+          <ng-container *ngIf="!authService.isAuthenticated()">
             <button (click)="login()" class="btn btn-primary btn-lg">Continue With Google</button>
           </ng-container>
-          <ng-container *ngIf="(authService.currentUser$ | async)">
+          <ng-container *ngIf="authService.isAuthenticated()">
             <a routerLink="/dashboard" class="btn btn-primary btn-lg">Start Building Momentum</a>
           </ng-container>
           <a href="#features" class="btn btn-secondary btn-lg">Explore Features</a>
@@ -118,10 +118,10 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="cta-card card">
           <h2>Ready to hold yourself accountable?</h2>
           <p>Join developers and creators worldwide building consistency, one day at a time.</p>
-          <ng-container *ngIf="!(authService.currentUser$ | async)">
+          <ng-container *ngIf="!authService.isAuthenticated()">
             <button (click)="login()" class="btn btn-primary">Show Up Today</button>
           </ng-container>
-          <ng-container *ngIf="(authService.currentUser$ | async)">
+          <ng-container *ngIf="authService.isAuthenticated()">
             <a routerLink="/dashboard" class="btn btn-primary">Show Up Today</a>
           </ng-container>
         </div>

@@ -29,9 +29,10 @@ interface RoadmapModule {
           <h3>Version 2 Roadmap Preview</h3>
           
           <div class="modules-grid">
-            <div *ngFor="let mod of modules" class="card module-card">
+            <div *ngFor="let mod of modules; let i = index" class="card module-card animate-slide-up" [style.animationDelay.ms]="i * 100 + 100">
               <div class="module-header-row">
                 <span class="module-icon" [innerHTML]="mod.iconSvg"></span>
+                <span [class]="'badge ' + mod.badgeClass">{{ mod.badge }}</span>
               </div>
               <h4>{{ mod.title }}</h4>
               <p>{{ mod.description }}</p>
@@ -79,6 +80,13 @@ interface RoadmapModule {
     /* Layout */
     .community-layout {
       width: 100%;
+      margin-top: 1rem;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
     }
 
     .module-card {
@@ -97,7 +105,7 @@ interface RoadmapModule {
 
     .module-header-row {
       display: flex;
-      justify-content: flex-start;
+      justify-content: space-between;
       align-items: center;
     }
 
@@ -114,6 +122,25 @@ interface RoadmapModule {
       font-size: 0.9rem;
       color: var(--text-secondary);
       line-height: 1.5;
+    }
+
+    /* Badges colors */
+    .badge-planned {
+      background: rgba(113, 113, 122, 0.1);
+      color: var(--text-muted);
+      border: 1px solid rgba(113, 113, 122, 0.2);
+    }
+
+    .badge-inprogress {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .badge-launch {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
     }
 
     @media (max-width: 1024px) {
