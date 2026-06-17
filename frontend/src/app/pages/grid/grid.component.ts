@@ -19,7 +19,7 @@ interface GridDisplayCell {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="grid-page-container">
+    <div class="grid-page-container animate-fade-in">
       <!-- Title Header -->
       <header class="grid-page-header">
         <div>

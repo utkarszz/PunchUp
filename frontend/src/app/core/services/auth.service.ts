@@ -48,7 +48,7 @@ export class AuthService {
     localStorage.setItem('token', token);
     return this.loadCurrentUser().pipe(
       tap(() => {
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/']); // Redirect to landing page instead of dashboard
       })
     );
   }

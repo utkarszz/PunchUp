@@ -9,7 +9,7 @@ import { TaskService, Task } from '../../core/services/task.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="tasks-container">
+    <div class="tasks-container animate-fade-in">
       <!-- Title Header -->
       <header class="tasks-header">
         <div>

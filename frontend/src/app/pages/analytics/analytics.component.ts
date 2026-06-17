@@ -11,7 +11,7 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="analytics-container">
+    <div class="analytics-container animate-fade-in">
       <!-- Title Header -->
       <header class="analytics-header">
         <h1>Visual Analytics</h1>

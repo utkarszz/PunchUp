@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-landing',
@@ -9,7 +10,7 @@ import { RouterLink, Router } from '@angular/router';
   template: `
     <div class="landing-container">
       <!-- Nav Header -->
-      <header class="landing-header">
+      <header class="landing-header animate-fade-in animate-stagger-1">
         <div class="logo">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -17,20 +18,32 @@ import { RouterLink, Router } from '@angular/router';
           <span class="logo-text">PunchUp</span>
         </div>
         <div class="header-actions">
-          <a routerLink="/login" class="btn btn-secondary btn-sm">Sign In</a>
-          <a routerLink="/login" class="btn btn-primary btn-sm">Get Started</a>
+          <ng-container *ngIf="!(authService.currentUser$ | async)">
+            <button (click)="login()" class="btn btn-secondary btn-sm">Sign In</button>
+            <button (click)="login()" class="btn btn-primary btn-sm">Get Started</button>
+          </ng-container>
+          <ng-container *ngIf="(authService.currentUser$ | async)">
+            <a routerLink="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+          </ng-container>
         </div>
       </header>
 
       <!-- Hero Section -->
       <section class="hero-section">
-        <div class="badge-pill">PunchUp Public Beta</div>
-        <h1 class="hero-title animate-fade-in">Make Progress <span class="highlight">Visible</span>.</h1>
-        <p class="hero-subtitle animate-slide-up">
-          A consistency and productivity platform where users track tasks, build streaks, visualize daily growth through a contribution grid, and showcase progress.
+        <div class="badge-pill animate-slide-up animate-stagger-2">PunchUp Public Beta</div>
+        <h1 class="hero-title animate-slide-up animate-stagger-3">Consistency <span class="highlight">compounds</span>.</h1>
+        <p class="hero-subtitle animate-slide-up animate-stagger-4">
+          Build streaks.<br>
+          Track meaningful work.<br>
+          Create momentum every day.
         </p>
-        <div class="cta-group animate-slide-up">
-          <a routerLink="/login" class="btn btn-primary btn-lg">Start Tracking for Free</a>
+        <div class="cta-group animate-slide-up animate-stagger-4">
+          <ng-container *ngIf="!(authService.currentUser$ | async)">
+            <button (click)="login()" class="btn btn-primary btn-lg">Continue With Google</button>
+          </ng-container>
+          <ng-container *ngIf="(authService.currentUser$ | async)">
+            <a routerLink="/dashboard" class="btn btn-primary btn-lg">Start Building Momentum</a>
+          </ng-container>
           <a href="#features" class="btn btn-secondary btn-lg">Explore Features</a>
         </div>
       </section>
@@ -88,13 +101,53 @@ import { RouterLink, Router } from '@angular/router';
         </div>
       </section>
 
+      <!-- Target Audience -->
+      <section class="target-audience-section animate-slide-up">
+        <h2>Who is PunchUp for?</h2>
+        <div class="audience-grid">
+          <div class="audience-item">Developers</div>
+          <div class="audience-item">Students</div>
+          <div class="audience-item">Creators</div>
+          <div class="audience-item">Founders</div>
+          <div class="audience-item">Anyone building habits</div>
+        </div>
+      </section>
+
       <!-- CTA Banner -->
-      <section class="cta-banner">
+      <section class="cta-banner animate-slide-up">
         <div class="cta-card card">
           <h2>Ready to hold yourself accountable?</h2>
           <p>Join developers and creators worldwide building consistency, one day at a time.</p>
-          <a routerLink="/login" class="btn btn-primary">Get Started Now</a>
+          <ng-container *ngIf="!(authService.currentUser$ | async)">
+            <button (click)="login()" class="btn btn-primary">Show Up Today</button>
+          </ng-container>
+          <ng-container *ngIf="(authService.currentUser$ | async)">
+            <a routerLink="/dashboard" class="btn btn-primary">Show Up Today</a>
+          </ng-container>
         </div>
+      </section>
+
+      <!-- Feedback & Contact Sections -->
+      <section class="bottom-sections animate-slide-up">
+        
+        <!-- Built By Card -->
+        <div class="contact-card card">
+          <h3>Built By Utkarsh Singh</h3>
+          <p class="contact-desc">Creator and Lead Developer of PunchUp.</p>
+          <div class="contact-links">
+            <a href="https://github.com/utkarszz" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">GitHub</a>
+            <a href="https://www.linkedin.com/in/utkarsh-singh-6a560037a/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">LinkedIn</a>
+            <a href="mailto:utkarzz1705@gmail.com" class="btn btn-secondary btn-sm">Email</a>
+          </div>
+        </div>
+
+        <!-- Feedback Card -->
+        <div class="feedback-card card">
+          <h3>Help Improve PunchUp</h3>
+          <p class="feedback-desc">Found a bug? Have a feature idea? Want to suggest improvements?</p>
+          <a href="mailto:utkarzz1705@gmail.com?subject=PunchUp Feedback" class="btn btn-primary btn-sm">Send Feedback</a>
+        </div>
+
       </section>
 
       <!-- Footer -->
@@ -350,6 +403,87 @@ import { RouterLink, Router } from '@angular/router';
       margin-top: auto;
     }
 
+    .target-audience-section {
+      width: 100%;
+      max-width: 1000px;
+      margin-bottom: 6rem;
+      text-align: center;
+    }
+
+    .target-audience-section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      color: var(--text-primary);
+    }
+
+    .audience-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .audience-item {
+      padding: 0.75rem 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      transition: all var(--transition-normal);
+    }
+
+    .audience-item:hover {
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+
+    .bottom-sections {
+      width: 100%;
+      max-width: 1000px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+    }
+
+    .contact-card, .feedback-card {
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1rem;
+      transition: all var(--transition-normal);
+    }
+
+    .contact-card:hover, .feedback-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+
+    .contact-card h3, .feedback-card h3 {
+      font-size: 1.25rem;
+      color: var(--text-primary);
+    }
+
+    .contact-desc, .feedback-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .contact-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
     /* Responsiveness */
     @media (max-width: 768px) {
       .hero-title {
@@ -358,10 +492,14 @@ import { RouterLink, Router } from '@angular/router';
       .features-grid {
         grid-template-columns: 1fr;
       }
+      .bottom-sections {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
 export class LandingComponent {
+  public authService = inject(AuthService);
   public mockGrid: { date: string; tasks: number; intensity: number }[] = [];
 
   constructor() {
@@ -380,4 +518,9 @@ export class LandingComponent {
       });
     }
   }
+
+  public login(): void {
+    this.authService.loginWithGoogle();
+  }
 }
+

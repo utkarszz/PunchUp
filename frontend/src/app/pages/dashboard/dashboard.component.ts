@@ -14,9 +14,9 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="dashboard-container">
+    <div class="dashboard-container animate-fade-in">
       <!-- Welcome Header -->
-      <header class="dashboard-header" *ngIf="authService.currentUser$ | async as user">
+      <header class="dashboard-header animate-slide-up" *ngIf="authService.currentUser$ | async as user">
         <div>
           <h1>Welcome back, {{ user.username }}</h1>
           <p class="subtitle">Here is your consistency overview for today.</p>
@@ -28,7 +28,7 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       </header>
 
       <!-- Stats Grid -->
-      <section class="stats-row">
+      <section class="stats-row animate-slide-up animate-stagger-1">
         <!-- Card 1: Streak -->
         <div class="card stat-card">
           <span class="stat-label">Current Streak</span>
@@ -63,7 +63,7 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       </section>
 
       <!-- Main Layout Grid -->
-      <div class="dashboard-grid-layout">
+      <div class="dashboard-grid-layout animate-slide-up animate-stagger-2">
         <!-- Recent Tasks Checklist -->
         <div class="card checklist-card">
           <div class="card-title-row">
