@@ -484,16 +484,192 @@ import { AuthService } from '../../core/services/auth.service';
       margin-top: 0.5rem;
     }
 
-    /* Responsiveness */
-    @media (max-width: 768px) {
-      .hero-title {
-        font-size: 2.5rem;
-      }
+    /* ============================================
+       RESPONSIVE — TABLET
+       ============================================ */
+    @media (max-width: 900px) {
       .features-grid {
         grid-template-columns: 1fr;
       }
+
       .bottom-sections {
         grid-template-columns: 1fr;
+      }
+    }
+
+    /* ============================================
+       RESPONSIVE — MOBILE
+       ============================================ */
+    @media (max-width: 768px) {
+
+      /* Container */
+      .landing-container {
+        padding: 0 1rem;
+      }
+
+      /* Header */
+      .landing-header {
+        padding: 1rem 0;
+      }
+
+      .logo-text {
+        font-size: 1.1rem;
+      }
+
+      .header-actions {
+        gap: 0.5rem;
+      }
+
+      .header-actions .btn-sm {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      /* Hero */
+      .hero-section {
+        padding: 3.5rem 0 3rem;
+        gap: 0;
+      }
+
+      .badge-pill {
+        margin-bottom: 1.25rem;
+        font-size: 0.7rem;
+      }
+
+      .hero-title {
+        font-size: 2.25rem;
+        margin-bottom: 1.25rem;
+        letter-spacing: -0.03em;
+      }
+
+      .hero-subtitle {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        line-height: 1.7;
+      }
+
+      .cta-group {
+        flex-direction: column;
+        width: 100%;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+
+      .btn-lg {
+        width: 100%;
+        justify-content: center;
+        padding: 0.9rem 1.5rem;
+        font-size: 0.9375rem;
+      }
+
+      /* Showcase grid */
+      .showcase-section {
+        margin-bottom: 2.5rem;
+      }
+
+      .showcase-grid-card {
+        padding: 1.5rem 1.25rem;
+        gap: 1.25rem;
+      }
+
+      .showcase-grid-card h3 {
+        font-size: 1.25rem;
+      }
+
+      .grid-preview {
+        padding: 1rem 0.75rem;
+      }
+
+      /* Feature cards */
+      .features-grid-section {
+        margin-bottom: 2.5rem;
+      }
+
+      .feature-card {
+        padding: 1.5rem 1.25rem;
+      }
+
+      .feature-card h4 {
+        font-size: 1.05rem;
+      }
+
+      /* Target audience */
+      .target-audience-section {
+        margin-bottom: 3rem;
+      }
+
+      .target-audience-section h2 {
+        font-size: 1.35rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .audience-grid {
+        gap: 0.625rem;
+      }
+
+      .audience-item {
+        padding: 0.6rem 1.1rem;
+        font-size: 0.875rem;
+      }
+
+      /* CTA Banner */
+      .cta-banner {
+        margin-bottom: 3rem;
+      }
+
+      .cta-card {
+        padding: 2rem 1.5rem;
+        gap: 1rem;
+      }
+
+      .cta-card h2 {
+        font-size: 1.5rem;
+      }
+
+      .cta-card p {
+        font-size: 0.9rem;
+      }
+
+      .cta-card .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Bottom sections */
+      .bottom-sections {
+        margin-bottom: 2.5rem;
+        gap: 1rem;
+      }
+
+      .contact-card, .feedback-card {
+        padding: 1.75rem 1.5rem;
+      }
+
+      .contact-card h3, .feedback-card h3 {
+        font-size: 1.1rem;
+      }
+
+      /* Footer */
+      .landing-footer {
+        padding: 1.5rem 0;
+        margin-bottom: 1rem;
+      }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 400px) {
+      .hero-title {
+        font-size: 1.875rem;
+      }
+
+      .landing-header {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      /* Hide secondary Sign In button — Get Started is enough */
+      .header-actions .btn-secondary {
+        display: none;
       }
     }
   `]

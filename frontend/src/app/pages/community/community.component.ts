@@ -143,9 +143,52 @@ interface RoadmapModule {
       border: 1px solid rgba(16, 185, 129, 0.2);
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 900px) {
       .modules-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .community-page-container {
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
+      }
+
+      .community-header h1 {
+        font-size: 1.4rem;
+        line-height: 1.3;
+      }
+
+      .community-header .subtitle {
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+
+      .community-layout {
+        margin-top: 0.5rem;
+      }
+
+      .modules-grid {
+        grid-template-columns: 1fr;
+        gap: 0.875rem;
+      }
+
+      .module-card {
+        padding: 1.25rem;
+      }
+
+      .module-card h4 {
+        font-size: 1rem;
+      }
+
+      .module-card p {
+        font-size: 0.875rem;
+      }
+
+      .roadmap-timeline h3 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
       }
     }
   `]

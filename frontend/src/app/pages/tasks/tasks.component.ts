@@ -421,20 +421,70 @@ import { TaskService, Task } from '../../core/services/task.service';
     }
 
     @media (max-width: 768px) {
-      .tasks-grid {
-        grid-template-columns: 1fr;
+      .tasks-container {
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
       }
+
+      /* Header */
       .tasks-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
         width: 100%;
       }
+
+      .tasks-header h1 {
+        font-size: 1.4rem;
+      }
+
       .tasks-header button {
         width: 100%;
+        justify-content: center;
       }
+
+      /* Filter card */
+      .filter-card {
+        padding: 1.25rem;
+      }
+
+      .filter-row {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .tasks-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      /* Task rows */
+      .task-row {
+        padding: 1rem;
+        gap: 0.75rem;
+      }
+
+      .task-actions {
+        flex-shrink: 0;
+      }
+
+      /* Empty state */
+      .empty-state {
+        padding: 3rem 1rem;
+      }
+
+      /* Modal */
       .form-row {
         grid-template-columns: 1fr;
+      }
+
+      .modal-buttons {
+        flex-direction: column-reverse;
+      }
+
+      .modal-buttons .btn {
+        width: 100%;
+        justify-content: center;
       }
     }
   `]

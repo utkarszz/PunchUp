@@ -480,17 +480,76 @@ interface GridDisplayCell {
     }
 
     @media (max-width: 768px) {
-      .stats-panel {
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
+      .grid-page-container {
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
       }
-      .stats-metric:nth-child(even) {
-        border-right: none;
-      }
+
       .grid-page-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 0.875rem;
+      }
+
+      .grid-page-header h1 {
+        font-size: 1.4rem;
+      }
+
+      .year-select {
+        min-width: 100px;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.8125rem;
+      }
+
+      /* Stats panel: 2x2 grid on mobile */
+      .stats-panel {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        padding: 1.25rem;
+      }
+
+      .stats-metric:nth-child(even) {
+        border-right: none;
+      }
+
+      .stats-metric:nth-child(n+3) {
+        border-top: 1px solid var(--border);
+        padding-top: 0.75rem;
+      }
+
+      .metric-value {
+        font-size: 1.65rem;
+      }
+
+      /* Grid card */
+      .grid-wrapper {
+        padding: 1.25rem 1rem;
         gap: 1rem;
+      }
+
+      .grid-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .grid-card-header h3 {
+        font-size: 0.875rem;
+      }
+
+      /* Analysis */
+      .analysis-card {
+        padding: 1.25rem;
+      }
+
+      .bar-label {
+        width: 90px;
+        font-size: 0.75rem;
+      }
+
+      .bar-value {
+        width: 50px;
+        font-size: 0.75rem;
       }
     }
   `]

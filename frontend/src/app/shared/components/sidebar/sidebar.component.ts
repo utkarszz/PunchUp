@@ -225,6 +225,13 @@ interface NavItem {
       color: var(--danger);
       background-color: rgba(239, 68, 68, 0.08);
     }
+
+    /* Hide sidebar on mobile — bottom nav takes over */
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+    }
   `]
 })
 export class SidebarComponent implements OnInit {

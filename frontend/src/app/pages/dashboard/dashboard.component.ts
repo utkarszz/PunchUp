@@ -442,14 +442,58 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
     }
 
     @media (max-width: 768px) {
-      .stats-row {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+      .dashboard-container {
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
       }
+
       .dashboard-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+      }
+
+      .dashboard-header h1 {
+        font-size: 1.4rem;
+      }
+
+      .header-badge {
+        align-self: flex-start;
+      }
+
+      .stats-row {
+        grid-template-columns: 1fr;
+        gap: 0.875rem;
+      }
+
+      .stat-card {
+        padding: 1.25rem;
+      }
+
+      .stat-value {
+        font-size: 1.75rem;
+      }
+
+      .dashboard-grid-layout {
+        grid-template-columns: 1fr;
+        gap: 0.875rem;
+      }
+
+      .card-title-row h3 {
+        font-size: 0.95rem;
+      }
+
+      .task-item {
+        padding: 0.875rem 0.875rem;
+      }
+
+      .mini-grid-container {
+        padding: 1rem 0.75rem;
+      }
+
+      .mini-cell {
+        width: 9px;
+        height: 9px;
       }
     }
   `]

@@ -199,9 +199,55 @@ Chart.register(...registerables);
       }
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
+      .analytics-container {
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
+      }
+
+      .analytics-header h1 {
+        font-size: 1.4rem;
+      }
+
       .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.875rem;
+      }
+
+      .stat-card {
+        padding: 1.25rem;
+      }
+
+      .stat-card .value {
+        font-size: 1.75rem;
+      }
+
+      .charts-section {
+        gap: 0.875rem;
+      }
+
+      .chart-card {
+        padding: 1.25rem;
+        min-height: 280px;
+      }
+
+      .chart-wrapper {
+        height: 180px;
+      }
+
+      .chart-wrapper-wide {
+        height: 220px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+
+      .stat-card .value {
+        font-size: 1.5rem;
       }
     }
   `]
