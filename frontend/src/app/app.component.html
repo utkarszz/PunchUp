@@ -1,0 +1,7 @@
+<div [class.app-layout]="isAuthenticated">
+  <app-sidebar *ngIf="isAuthenticated"></app-sidebar>
+  <main [class.main-content]="isAuthenticated" [class.public-main]="!isAuthenticated">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+<app-command-palette *ngIf="isAuthenticated"></app-command-palette>
