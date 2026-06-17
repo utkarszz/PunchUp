@@ -74,7 +74,7 @@ import { UploadService } from '../../core/services/upload.service';
 
             <div class="form-actions">
               <div class="save-status" *ngIf="saveStatus" [class.success]="saveStatus === 'success'">
-                {{ saveStatus === 'success' ? 'Profile saved successfully!' : 'Failed to save profile.' }}
+                {{ saveStatus === 'success' ? 'Profile saved successfully!' : (serverErrorMessage || 'Failed to save profile.') }}
               </div>
               <button type="submit" [disabled]="isSaving" class="btn btn-primary">
                 {{ isSaving ? 'Saving Changes...' : 'Save Settings' }}
@@ -250,11 +250,95 @@ import { UploadService } from '../../core/services/upload.service';
     }
 
     @media (max-width: 768px) {
+      .profile-page-container {
+        padding: 1.25rem 1rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1.25rem);
+        gap: 1.5rem;
+      }
+
       .profile-layout-grid {
         grid-template-columns: 1fr;
       }
+
+      .form-card {
+        padding: 1.5rem;
+      }
+
+      .profile-form {
+        gap: 1.25rem;
+      }
+
+      .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+
+      .form-actions button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .profile-page-container {
+        padding: 1rem 0.875rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1rem);
+        gap: 1.25rem;
+      }
+
+      .profile-page-container h1 {
+        font-size: 1.375rem;
+      }
+
+      .subtitle {
+        font-size: 0.8125rem;
+      }
+
+      .avatar-card {
+        padding: 1.25rem;
+      }
+
+      .avatar-wrapper {
+        width: 110px;
+        height: 110px;
+      }
+
+      .form-card {
+        padding: 1.25rem;
+        gap: 1rem;
+      }
+
+      .copy-row {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .copy-row button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .profile-page-container {
+        padding: 0.875rem 0.75rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 0.875rem);
+      }
+
+      .profile-page-container h1 {
+        font-size: 1.25rem;
+      }
+
+      .avatar-wrapper {
+        width: 96px;
+        height: 96px;
+      }
+
+      .form-card {
+        padding: 1rem;
+      }
     }
   `]
+
 })
 export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
@@ -268,6 +352,7 @@ export class ProfileComponent implements OnInit {
   public isSaving = false;
   public isUploading = false;
   public saveStatus: 'success' | 'error' | null = null;
+  public serverErrorMessage = '';
   public copyText = 'Copy';
 
   ngOnInit() {
@@ -327,6 +412,7 @@ export class ProfileComponent implements OnInit {
 
     this.isSaving = true;
     this.saveStatus = null;
+    this.serverErrorMessage = '';
 
     this.userService.updateProfile(this.username, this.bio).subscribe({
       next: response => {
@@ -343,9 +429,10 @@ export class ProfileComponent implements OnInit {
           setTimeout(() => this.saveStatus = null, 3000);
         }
       },
-      error: () => {
+      error: (err) => {
         this.isSaving = false;
         this.saveStatus = 'error';
+        this.serverErrorMessage = err.error?.message || 'Failed to save profile.';
         setTimeout(() => this.saveStatus = null, 3000);
       }
     });

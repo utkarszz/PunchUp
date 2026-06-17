@@ -18,35 +18,56 @@ Chart.register(...registerables);
         <p class="subtitle">Detailed breakdown of your productivity output and consistency trends.</p>
       </header>
 
-      <!-- Stats Grid -->
-      <section class="stats-grid" *ngIf="analyticsData">
-        <div class="card stat-card">
+      <!-- Stats Grid (with animated numbers & skeletons) -->
+      <section class="stats-grid">
+        <!-- Metric 1: Completion Rate -->
+        <div class="card stat-card" [class.loading]="!analyticsData">
           <span class="label">Completion Rate</span>
-          <h2 class="value">{{ analyticsData.completionRate }}%</h2>
-          <span class="comparison">Total Tasks: {{ analyticsData.totalTasks }}</span>
+          <ng-container *ngIf="analyticsData; else skeletonValue">
+            <h2 class="value">{{ animatedCompletionRate }}%</h2>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" [style.width.%]="animatedCompletionRate"></div>
+            </div>
+            <span class="comparison">Total Tasks: {{ analyticsData.totalTasks }}</span>
+          </ng-container>
         </div>
 
-        <div class="card stat-card">
+        <!-- Metric 2: Completed Tasks -->
+        <div class="card stat-card" [class.loading]="!analyticsData">
           <span class="label">Completed Tasks</span>
-          <h2 class="value text-success">{{ analyticsData.completedTasks }}</h2>
-          <span class="comparison">All-time record</span>
+          <ng-container *ngIf="analyticsData; else skeletonValue">
+            <h2 class="value text-success">{{ animatedCompletedTasks }}</h2>
+            <span class="comparison">All-time record</span>
+          </ng-container>
         </div>
 
-        <div class="card stat-card">
+        <!-- Metric 3: Pending Tasks -->
+        <div class="card stat-card" [class.loading]="!analyticsData">
           <span class="label">Pending Tasks</span>
-          <h2 class="value text-warning">{{ analyticsData.pendingTasks }}</h2>
-          <span class="comparison">Needs attention</span>
+          <ng-container *ngIf="analyticsData; else skeletonValue">
+            <h2 class="value text-warning">{{ animatedPendingTasks }}</h2>
+            <span class="comparison">Needs attention</span>
+          </ng-container>
         </div>
 
-        <div class="card stat-card">
+        <!-- Metric 4: Active Streak -->
+        <div class="card stat-card" [class.loading]="!analyticsData">
           <span class="label">Active Streak</span>
-          <h2 class="value text-accent">{{ analyticsData.currentStreak }}</h2>
-          <span class="comparison">Record: {{ analyticsData.longestStreak }} days</span>
+          <ng-container *ngIf="analyticsData; else skeletonValue">
+            <h2 class="value text-accent">{{ animatedCurrentStreak }}</h2>
+            <span class="comparison">Record: {{ analyticsData.longestStreak }} days</span>
+          </ng-container>
         </div>
       </section>
 
+      <!-- Skeleton Templates -->
+      <ng-template #skeletonValue>
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-sub"></div>
+      </ng-template>
+
       <!-- Charts Section -->
-      <section class="charts-section">
+      <section class="charts-section" [class.hidden]="!analyticsData">
         <!-- Chart 1: Doughnut Completion Rate -->
         <div class="card chart-card">
           <h3>Completion Rate</h3>
@@ -56,16 +77,16 @@ Chart.register(...registerables);
           </div>
         </div>
 
-        <!-- Chart 2: Category status -->
+        <!-- Chart 2: Weekly Pattern -->
         <div class="card chart-card">
-          <h3>Category Output</h3>
-          <p class="chart-subtitle">Completed tasks grouped by workspace tag</p>
+          <h3>Weekly Pattern</h3>
+          <p class="chart-subtitle">Completed tasks by day of the week</p>
           <div class="chart-wrapper">
             <canvas #categoryOutputCanvas></canvas>
           </div>
         </div>
 
-        <!-- Chart 3: Priority breakdown -->
+        <!-- Chart 3: Priority Breakdown -->
         <div class="card chart-card full-width">
           <h3>Priority Distribution</h3>
           <p class="chart-subtitle">Count of tasks by priority level</p>
@@ -109,6 +130,8 @@ Chart.register(...registerables);
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      min-height: 120px;
+      justify-content: space-between;
     }
 
     .stat-card .label {
@@ -124,6 +147,8 @@ Chart.register(...registerables);
       font-weight: 700;
       font-family: var(--font-display);
       color: var(--text-primary);
+      line-height: 1;
+      letter-spacing: -0.02em;
     }
 
     .text-success { color: var(--success) !important; }
@@ -135,11 +160,33 @@ Chart.register(...registerables);
       color: var(--text-secondary);
     }
 
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 0.25rem 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(199, 199, 204, 0.4);
+      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
     /* Charts Section */
     .charts-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
+      transition: opacity var(--transition-normal);
+    }
+
+    .charts-section.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .chart-card {
@@ -187,6 +234,18 @@ Chart.register(...registerables);
       height: 100% !important;
     }
 
+    /* Skeletons */
+    .skeleton-title {
+      height: 2.25rem;
+      width: 60%;
+      margin: 0.25rem 0;
+    }
+
+    .skeleton-sub {
+      height: 0.85rem;
+      width: 40%;
+    }
+
     @media (max-width: 1024px) {
       .stats-grid {
         grid-template-columns: 1fr 1fr;
@@ -201,21 +260,27 @@ Chart.register(...registerables);
 
     @media (max-width: 768px) {
       .analytics-container {
-        padding: 1.5rem 1rem;
-        gap: 1.5rem;
+        padding: 1.25rem 1rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1.25rem);
+        gap: 1.25rem;
       }
 
       .analytics-header h1 {
         font-size: 1.4rem;
       }
 
+      .subtitle {
+        font-size: 0.8125rem;
+      }
+
       .stats-grid {
         grid-template-columns: 1fr 1fr;
-        gap: 0.875rem;
+        gap: 0.75rem;
       }
 
       .stat-card {
         padding: 1.25rem;
+        min-height: 100px;
       }
 
       .stat-card .value {
@@ -228,7 +293,7 @@ Chart.register(...registerables);
 
       .chart-card {
         padding: 1.25rem;
-        min-height: 280px;
+        min-height: 260px;
       }
 
       .chart-wrapper {
@@ -236,21 +301,70 @@ Chart.register(...registerables);
       }
 
       .chart-wrapper-wide {
-        height: 220px;
+        height: 200px;
       }
     }
 
     @media (max-width: 480px) {
+      .analytics-container {
+        padding: 1rem 0.875rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1rem);
+        gap: 1rem;
+      }
+
+      .analytics-header h1 {
+        font-size: 1.25rem;
+      }
+
       .stats-grid {
         grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
+        gap: 0.625rem;
+      }
+
+      .stat-card {
+        padding: 1rem;
+        min-height: 90px;
       }
 
       .stat-card .value {
         font-size: 1.5rem;
       }
+
+      .chart-card {
+        padding: 1rem;
+        min-height: 240px;
+      }
+
+      .chart-wrapper {
+        height: 160px;
+      }
+
+      .chart-wrapper-wide {
+        height: 180px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .analytics-container {
+        padding: 0.875rem 0.75rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 0.875rem);
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+      }
+
+      .stat-card .value {
+        font-size: 1.25rem;
+      }
+
+      .stat-card .label {
+        font-size: 0.6875rem;
+      }
     }
   `]
+
 })
 export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   private analyticsService = inject(AnalyticsService);
@@ -258,6 +372,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public analyticsData: AnalyticsData | null = null;
   public tasksList: Task[] = [];
+
+  // Animated counters value holders
+  public animatedCompletionRate = 0;
+  public animatedCompletedTasks = 0;
+  public animatedPendingTasks = 0;
+  public animatedCurrentStreak = 0;
 
   // Canvas elements
   @ViewChild('completionRateCanvas') completionRateCanvas!: ElementRef<HTMLCanvasElement>;
@@ -269,10 +389,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   private categoryOutputChart?: Chart;
   private priorityChart?: Chart;
 
+  private counterIntervals: any[] = [];
+
   ngOnInit() {
     this.analyticsService.getAnalytics().subscribe(response => {
       if (response.success && response.analytics) {
         this.analyticsData = response.analytics;
+        this.startAnimatedCounters();
         this.buildCharts();
       }
     });
@@ -294,6 +417,67 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.completionRateChart?.destroy();
     this.categoryOutputChart?.destroy();
     this.priorityChart?.destroy();
+    this.counterIntervals.forEach(interval => clearInterval(interval));
+  }
+
+  private startAnimatedCounters() {
+    if (!this.analyticsData) return;
+
+    this.counterIntervals.forEach(interval => clearInterval(interval));
+    this.counterIntervals = [];
+
+    // Target values
+    const targetRate = this.analyticsData.completionRate;
+    const targetCompleted = this.analyticsData.completedTasks;
+    const targetPending = this.analyticsData.pendingTasks;
+    const targetStreak = this.analyticsData.currentStreak;
+
+    // Set animated counters with simple linear increments
+    this.animatedCompletionRate = 0;
+    this.animatedCompletedTasks = 0;
+    this.animatedPendingTasks = 0;
+    this.animatedCurrentStreak = 0;
+
+    const rateStep = Math.max(1, Math.floor(targetRate / 30));
+    const completedStep = Math.max(1, Math.floor(targetCompleted / 30));
+    const pendingStep = Math.max(1, Math.floor(targetPending / 30));
+    const streakStep = Math.max(1, Math.floor(targetStreak / 30));
+
+    const intervalRate = setInterval(() => {
+      if (this.animatedCompletionRate < targetRate) {
+        this.animatedCompletionRate = Math.min(targetRate, this.animatedCompletionRate + rateStep);
+      } else {
+        clearInterval(intervalRate);
+      }
+    }, 20);
+    this.counterIntervals.push(intervalRate);
+
+    const intervalCompleted = setInterval(() => {
+      if (this.animatedCompletedTasks < targetCompleted) {
+        this.animatedCompletedTasks = Math.min(targetCompleted, this.animatedCompletedTasks + completedStep);
+      } else {
+        clearInterval(intervalCompleted);
+      }
+    }, 20);
+    this.counterIntervals.push(intervalCompleted);
+
+    const intervalPending = setInterval(() => {
+      if (this.animatedPendingTasks < targetPending) {
+        this.animatedPendingTasks = Math.min(targetPending, this.animatedPendingTasks + pendingStep);
+      } else {
+        clearInterval(intervalPending);
+      }
+    }, 20);
+    this.counterIntervals.push(intervalPending);
+
+    const intervalStreak = setInterval(() => {
+      if (this.animatedCurrentStreak < targetStreak) {
+        this.animatedCurrentStreak = Math.min(targetStreak, this.animatedCurrentStreak + streakStep);
+      } else {
+        clearInterval(intervalStreak);
+      }
+    }, 20);
+    this.counterIntervals.push(intervalStreak);
   }
 
   private buildCharts() {
@@ -302,7 +486,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     // Build completion rate doughnut chart
     if (this.completionRateCanvas?.nativeElement) {
       this.completionRateChart?.destroy();
-      
+
       const ctx = this.completionRateCanvas.nativeElement.getContext('2d');
       if (ctx) {
         this.completionRateChart = new Chart(ctx, {
@@ -311,8 +495,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             labels: ['Completed', 'Pending'],
             datasets: [{
               data: [this.analyticsData.completedTasks, this.analyticsData.pendingTasks],
-              backgroundColor: ['#10b981', '#3f3f46'],
-              borderColor: '#18181b',
+              backgroundColor: ['#c7c7cc', '#222226'],
+              borderColor: '#111113',
               borderWidth: 2,
               hoverOffset: 4
             }]
@@ -320,11 +504,15 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              duration: 800,
+              easing: 'easeOutQuart'
+            },
             plugins: {
               legend: {
                 position: 'bottom',
                 labels: {
-                  color: '#fafafa',
+                  color: '#a1a1aa',
                   font: { family: 'Inter', size: 11 }
                 }
               }
@@ -334,54 +522,57 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    // Build category chart
+    // Build weekly pattern chart (completions by day of the week)
     if (this.categoryOutputCanvas?.nativeElement) {
       this.categoryOutputChart?.destroy();
 
-      // Aggregate completed tasks by category
-      const categories: { [key: string]: number } = {};
-      this.tasksList.filter(t => t.completed).forEach(t => {
-        const cat = t.category || 'general';
-        categories[cat] = (categories[cat] || 0) + 1;
-      });
+      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const completionsByDay = [0, 0, 0, 0, 0, 0, 0];
 
-      const labels = Object.keys(categories);
-      const data = Object.values(categories);
+      this.tasksList.filter(t => t.completed && t.completedAt).forEach(t => {
+        const date = new Date(t.completedAt!);
+        const dayIndex = date.getDay();
+        if (dayIndex >= 0 && dayIndex < 7) {
+          completionsByDay[dayIndex]++;
+        }
+      });
 
       const ctx = this.categoryOutputCanvas.nativeElement.getContext('2d');
       if (ctx) {
         this.categoryOutputChart = new Chart(ctx, {
-          type: 'polarArea',
+          type: 'radar',
           data: {
-            labels: labels.length > 0 ? labels : ['general'],
+            labels: daysOfWeek,
             datasets: [{
-              data: data.length > 0 ? data : [0],
-              backgroundColor: [
-                'rgba(199, 199, 204, 0.4)',
-                'rgba(16, 185, 129, 0.4)',
-                'rgba(245, 158, 11, 0.4)',
-                'rgba(239, 68, 68, 0.4)'
-              ],
-              borderColor: '#27272a',
-              borderWidth: 1
+              label: 'Completions',
+              data: completionsByDay,
+              backgroundColor: 'rgba(199, 199, 204, 0.15)',
+              borderColor: '#c7c7cc',
+              pointBackgroundColor: '#f4f4f5',
+              pointBorderColor: '#111113',
+              pointHoverBackgroundColor: '#111113',
+              pointHoverBorderColor: '#f4f4f5',
+              borderWidth: 2
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              duration: 800,
+              easing: 'easeOutQuart'
+            },
             scales: {
               r: {
-                ticks: { display: false },
-                grid: { color: '#27272a' }
+                angleLines: { color: 'rgba(255, 255, 255, 0.08)' },
+                grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                pointLabels: { color: '#a1a1aa', font: { family: 'Inter', size: 10 } },
+                ticks: { display: false }
               }
             },
             plugins: {
               legend: {
-                position: 'bottom',
-                labels: {
-                  color: '#fafafa',
-                  font: { family: 'Inter', size: 11 }
-                }
+                display: false
               }
             }
           }
@@ -410,8 +601,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             datasets: [{
               label: 'Task Count',
               data: [priorities.low, priorities.medium, priorities.high],
-              backgroundColor: ['#71717a', '#f59e0b', '#ef4444'],
-              borderColor: '#27272a',
+              backgroundColor: ['#52525b', '#f59e0b', '#ef4444'],
+              borderColor: '#222226',
               borderWidth: 1,
               borderRadius: 4
             }]
@@ -419,13 +610,17 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              duration: 800,
+              easing: 'easeOutQuart'
+            },
             scales: {
               x: {
                 grid: { display: false },
                 ticks: { color: '#a1a1aa' }
               },
               y: {
-                grid: { color: '#27272a' },
+                grid: { color: '#222226' },
                 ticks: { color: '#a1a1aa', stepSize: 1 }
               }
             },

@@ -28,16 +28,16 @@ import { TaskService, Task } from '../../core/services/task.service';
           <!-- Search input -->
           <div class="search-box">
             <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input 
-              type="text" 
-              placeholder="Search tasks..." 
+            <input
+              type="text"
+              placeholder="Search tasks..."
               [(ngModel)]="filterSearch"
               (input)="applyFilters()" />
           </div>
 
           <!-- Status select -->
           <select [(ngModel)]="filterStatus" (change)="applyFilters()">
-            <option value="all">All Statuses</option>
+            <option value="all">All Status</option>
             <option value="pending">Pending</option>
             <option value="completed">Completed</option>
           </select>
@@ -49,12 +49,6 @@ import { TaskService, Task } from '../../core/services/task.service';
             <option value="medium">Medium</option>
             <option value="high">High</option>
           </select>
-
-          <!-- Category select -->
-          <select [(ngModel)]="filterCategory" (change)="applyFilters()">
-            <option value="all">All Categories</option>
-            <option *ngFor="let cat of uniqueCategories" [value]="cat">{{ cat }}</option>
-          </select>
         </div>
       </section>
 
@@ -65,8 +59,8 @@ import { TaskService, Task } from '../../core/services/task.service';
             <div class="task-card-header">
               <div class="task-check-row">
                 <label class="checkbox-container">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     [checked]="task.completed"
                     [disabled]="task.completed"
                     (change)="onComplete(task)" />
@@ -87,11 +81,7 @@ import { TaskService, Task } from '../../core/services/task.service';
             <p class="task-desc">{{ task.description || 'No description provided.' }}</p>
 
             <div class="task-card-footer">
-              <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
-              <span class="category-pill">{{ task.category }}</span>
-              <span class="due-date" *ngIf="task.dueDate">
-                Due: {{ task.dueDate | date:'mediumDate' }}
-              </span>
+              <span [class]="'badge badge-' + task.priority">{{ task.priority }} Priority</span>
             </div>
           </div>
         </div>
@@ -110,7 +100,7 @@ import { TaskService, Task } from '../../core/services/task.service';
       <div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
         <div class="modal-content" (click)="$event.stopPropagation()">
           <h3 class="modal-title">{{ isEditMode ? 'Edit Task' : 'Create New Task' }}</h3>
-          
+
           <form (submit)="saveTask()" class="modal-form">
             <div class="form-group">
               <label>Task Title *</label>
@@ -131,16 +121,6 @@ import { TaskService, Task } from '../../core/services/task.service';
                   <option value="high">High</option>
                 </select>
               </div>
-
-              <div class="form-group">
-                <label>Category</label>
-                <input type="text" [(ngModel)]="modalTask.category" name="category" placeholder="e.g. coding, personal, fitness" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Due Date</label>
-              <input type="date" [(ngModel)]="modalTask.dueDate" name="dueDate" />
             </div>
 
             <div class="modal-buttons">
@@ -291,15 +271,6 @@ import { TaskService, Task } from '../../core/services/task.service';
       margin-top: auto;
     }
 
-    .category-pill {
-      background: var(--surface-hover);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      border-radius: 4px;
-      padding: 0.125rem 0.5rem;
-      text-transform: capitalize;
-    }
-
     .due-date {
       color: var(--text-muted);
       margin-left: auto;
@@ -422,15 +393,15 @@ import { TaskService, Task } from '../../core/services/task.service';
 
     @media (max-width: 768px) {
       .tasks-container {
-        padding: 1.5rem 1rem;
-        gap: 1.5rem;
+        padding: 1.25rem 1rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1.25rem);
+        gap: 1.25rem;
       }
 
-      /* Header */
       .tasks-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 0.875rem;
         width: 100%;
       }
 
@@ -443,9 +414,8 @@ import { TaskService, Task } from '../../core/services/task.service';
         justify-content: center;
       }
 
-      /* Filter card */
       .filter-card {
-        padding: 1.25rem;
+        padding: 1rem 1.25rem;
       }
 
       .filter-row {
@@ -453,27 +423,28 @@ import { TaskService, Task } from '../../core/services/task.service';
         gap: 0.75rem;
       }
 
+      .search-box {
+        min-width: 100%;
+      }
+
+      select {
+        min-width: 100%;
+      }
+
       .tasks-grid {
         grid-template-columns: 1fr;
-        gap: 0.75rem;
+        gap: 0.875rem;
       }
 
-      /* Task rows */
-      .task-row {
-        padding: 1rem;
-        gap: 0.75rem;
+      .task-card {
+        padding: 1.25rem;
+        min-height: unset;
       }
 
-      .task-actions {
-        flex-shrink: 0;
-      }
-
-      /* Empty state */
-      .empty-state {
+      .empty-tasks-state {
         padding: 3rem 1rem;
       }
 
-      /* Modal */
       .form-row {
         grid-template-columns: 1fr;
       }
@@ -487,7 +458,65 @@ import { TaskService, Task } from '../../core/services/task.service';
         justify-content: center;
       }
     }
+
+    @media (max-width: 480px) {
+      .tasks-container {
+        padding: 1rem 0.875rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1rem);
+        gap: 1rem;
+      }
+
+      .tasks-header h1 {
+        font-size: 1.25rem;
+      }
+
+      .subtitle {
+        font-size: 0.8125rem;
+      }
+
+      .task-card {
+        padding: 1rem;
+        gap: 0.75rem;
+      }
+
+      .task-title {
+        font-size: 0.9375rem;
+      }
+
+      .task-desc {
+        font-size: 0.8125rem;
+        -webkit-line-clamp: 2;
+      }
+
+      .filter-card {
+        padding: 0.875rem 1rem;
+      }
+
+      .modal-title {
+        font-size: 1.1rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .tasks-container {
+        padding: 0.875rem 0.75rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 0.875rem);
+      }
+
+      .tasks-header h1 {
+        font-size: 1.125rem;
+      }
+
+      .task-card {
+        padding: 0.875rem;
+      }
+
+      .task-title {
+        font-size: 0.875rem;
+      }
+    }
   `]
+
 })
 export class TasksComponent implements OnInit {
   private taskService = inject(TaskService);
@@ -495,13 +524,11 @@ export class TasksComponent implements OnInit {
 
   public allTasks: Task[] = [];
   public filteredTasks: Task[] = [];
-  public uniqueCategories: string[] = [];
 
   // Filter models
   public filterSearch = '';
   public filterStatus = 'all';
   public filterPriority = 'all';
-  public filterCategory = 'all';
 
   // Modal control
   public showModal = false;
@@ -524,15 +551,9 @@ export class TasksComponent implements OnInit {
     this.taskService.getTasks().subscribe((response: any) => {
       if (response.success) {
         this.allTasks = response.tasks;
-        this.extractCategories();
         this.applyFilters();
       }
     });
-  }
-
-  private extractCategories() {
-    const cats = this.allTasks.map(t => t.category.toLowerCase().trim());
-    this.uniqueCategories = Array.from(new Set(cats)).filter(c => c !== 'general' && c !== '');
   }
 
   public applyFilters() {
@@ -550,10 +571,7 @@ export class TasksComponent implements OnInit {
       // Priority filter
       const matchesPriority = this.filterPriority === 'all' || task.priority === this.filterPriority;
 
-      // Category filter
-      const matchesCategory = this.filterCategory === 'all' || task.category.toLowerCase().trim() === this.filterCategory.toLowerCase().trim();
-
-      return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
+      return matchesSearch && matchesStatus && matchesPriority;
     });
   }
 
@@ -562,7 +580,7 @@ export class TasksComponent implements OnInit {
       title: '',
       description: '',
       priority: 'medium',
-      category: 'general',
+      category: 'general', // Default category sent so backend is safe
       dueDate: ''
     };
   }
@@ -577,16 +595,16 @@ export class TasksComponent implements OnInit {
   public openEditModal(task: Task) {
     this.isEditMode = true;
     this.activeEditingId = task._id;
-    
+
     // Copy task properties
     this.modalTask = {
       title: task.title,
       description: task.description,
       priority: task.priority,
-      category: task.category,
+      category: task.category || 'general',
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
     };
-    
+
     this.showModal = true;
   }
 
@@ -618,7 +636,7 @@ export class TasksComponent implements OnInit {
 
   public onComplete(task: Task) {
     if (task.completed) return;
-    
+
     this.taskService.completeTask(task._id).subscribe((response: any) => {
       if (response.success) {
         task.completed = true;

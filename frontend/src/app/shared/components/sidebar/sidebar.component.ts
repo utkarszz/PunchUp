@@ -17,10 +17,8 @@ interface NavItem {
     <aside [ngClass]="{ 'collapsed': isCollapsed }" class="sidebar">
       <div class="sidebar-header">
         <div class="logo-container">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-          <span class="logo-text" *ngIf="!isCollapsed">PunchUp</span>
+          <img src="assets/logo.png" alt="PunchUp" class="logo-img" />
+          <span class="logo-text" *ngIf="!isCollapsed">PunchUp <span class="logo-v1">V1</span></span>
         </div>
         <button (click)="toggleSidebar()" class="btn-icon toggle-btn" aria-label="Toggle Sidebar">
           <svg *ngIf="!isCollapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
@@ -29,9 +27,9 @@ interface NavItem {
       </div>
 
       <nav class="sidebar-nav">
-        <a *ngFor="let item of navItems" 
-           [routerLink]="item.route" 
-           routerLinkActive="active" 
+        <a *ngFor="let item of navItems"
+           [routerLink]="item.route"
+           routerLinkActive="active"
            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
            class="nav-item"
            [title]="isCollapsed ? item.label : ''">
@@ -42,17 +40,17 @@ interface NavItem {
 
       <div class="sidebar-footer" *ngIf="authService.currentUser$ | async as user">
         <div class="user-badge" [routerLink]="['/profile']">
-          <img [src]="user.profilePicture || 'assets/default-avatar.png'" 
+          <img [src]="user.profilePicture || 'assets/default-avatar.png'"
                onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(this.title)"
                [title]="user.username"
-               alt="Avatar" 
+               alt="Avatar"
                class="user-avatar" />
           <div class="user-info" *ngIf="!isCollapsed">
             <span class="username">{{ user.username }}</span>
             <span class="user-email">{{ user.email }}</span>
           </div>
         </div>
-        
+
         <button (click)="onLogout()" class="nav-item logout-btn" [title]="isCollapsed ? 'Log Out' : ''">
           <span class="nav-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -72,7 +70,7 @@ interface NavItem {
       top: 0;
       display: flex;
       flex-direction: column;
-      transition: width var(--transition-normal);
+      transition: width 260ms cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 100;
       overflow: hidden;
     }
@@ -93,22 +91,48 @@ interface NavItem {
     .logo-container {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.625rem;
       font-family: var(--font-display);
       font-weight: 700;
-      font-size: 1.1rem;
-      letter-spacing: -0.03em;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
       color: var(--text-primary);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .logo-img {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: 6px;
     }
 
     .logo-text {
-      animation: fadeIn var(--transition-fast) forwards;
+      white-space: nowrap;
+      animation: fadeInText 200ms ease forwards;
+      overflow: hidden;
+    }
+
+    .logo-v1 {
+      color: var(--text-muted);
+      font-size: 0.8em;
+      font-weight: 500;
+      margin-left: 0.1em;
+    }
+
+    @keyframes fadeInText {
+      from { opacity: 0; transform: translateX(-4px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     .toggle-btn {
       color: var(--text-muted);
       border-radius: var(--radius);
-      padding: 0.25rem;
+      padding: 0.3rem;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
     }
 
     .toggle-btn:hover {
@@ -118,10 +142,10 @@ interface NavItem {
 
     .sidebar-nav {
       flex: 1;
-      padding: 1rem 0.75rem;
+      padding: 0.875rem 0.625rem;
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.2rem;
       overflow-y: auto;
     }
 
@@ -129,23 +153,28 @@ interface NavItem {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.625rem 0.75rem;
-      color: var(--text-secondary);
+      padding: 0.6rem 0.75rem;
+      color: var(--text-muted);
       border-radius: var(--radius);
-      transition: all var(--transition-fast) ease;
+      transition: all 160ms ease;
       cursor: pointer;
       font-size: 0.875rem;
       font-weight: 500;
+      border: 1px solid transparent;
+      white-space: nowrap;
     }
 
-    .nav-item:hover, .nav-item.active {
+    .nav-item:hover {
       color: var(--text-primary);
       background-color: var(--surface-hover);
+      border-color: var(--border);
     }
 
     .nav-item.active {
-      border: 1px solid var(--border);
+      color: var(--text-primary);
       background-color: rgba(199, 199, 204, 0.05);
+      border-color: var(--border);
+      box-shadow: inset 0 0 0 1px rgba(199,199,204,0.04);
     }
 
     .nav-icon {
@@ -155,34 +184,36 @@ interface NavItem {
       width: 20px;
       height: 20px;
       color: inherit;
+      flex-shrink: 0;
     }
 
     .nav-label {
-      animation: fadeIn var(--transition-fast) forwards;
       white-space: nowrap;
+      overflow: hidden;
     }
 
     .sidebar-footer {
-      padding: 1rem 0.75rem;
+      padding: 0.875rem 0.625rem;
       border-top: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      background: rgba(9, 9, 11, 0.2);
+      gap: 0.25rem;
     }
 
     .user-badge {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.5rem;
+      padding: 0.5rem 0.75rem;
       border-radius: var(--radius);
       cursor: pointer;
-      transition: background-color var(--transition-fast);
+      transition: all 160ms ease;
+      border: 1px solid transparent;
     }
 
     .user-badge:hover {
       background-color: var(--surface-hover);
+      border-color: var(--border);
     }
 
     .user-avatar {
@@ -191,13 +222,14 @@ interface NavItem {
       border-radius: 50%;
       border: 1px solid var(--border-hover);
       object-fit: cover;
+      flex-shrink: 0;
     }
 
     .user-info {
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      animation: fadeIn var(--transition-fast) forwards;
+      animation: fadeInText 200ms ease forwards;
     }
 
     .username {
@@ -223,10 +255,11 @@ interface NavItem {
 
     .logout-btn:hover {
       color: var(--danger);
-      background-color: rgba(239, 68, 68, 0.08);
+      background-color: rgba(239, 68, 68, 0.06);
+      border-color: rgba(239, 68, 68, 0.15);
     }
 
-    /* Hide sidebar on mobile — bottom nav takes over */
+    /* Hide sidebar on mobile */
     @media (max-width: 768px) {
       .sidebar {
         display: none;
@@ -249,7 +282,7 @@ export class SidebarComponent implements OnInit {
     {
       label: 'Tasks',
       route: '/tasks',
-      iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`
+      iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`
     },
     {
       label: 'Analytics',

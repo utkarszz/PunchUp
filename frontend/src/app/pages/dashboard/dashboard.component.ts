@@ -439,18 +439,23 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       .dashboard-grid-layout {
         grid-template-columns: 1fr;
       }
+
+      .stats-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
     }
 
     @media (max-width: 768px) {
       .dashboard-container {
-        padding: 1.5rem 1rem;
-        gap: 1.5rem;
+        padding: 1.25rem 1rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1.25rem);
+        gap: 1.25rem;
       }
 
       .dashboard-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .dashboard-header h1 {
@@ -463,11 +468,19 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
 
       .stats-row {
         grid-template-columns: 1fr;
-        gap: 0.875rem;
+        gap: 0.75rem;
       }
 
       .stat-card {
         padding: 1.25rem;
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .stat-value-container {
+        flex-direction: row;
+        align-items: baseline;
       }
 
       .stat-value {
@@ -484,11 +497,13 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       }
 
       .task-item {
-        padding: 0.875rem 0.875rem;
+        padding: 0.75rem;
+        gap: 0.75rem;
       }
 
       .mini-grid-container {
         padding: 1rem 0.75rem;
+        overflow-x: auto;
       }
 
       .mini-cell {
@@ -496,7 +511,79 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
         height: 9px;
       }
     }
+
+    @media (max-width: 480px) {
+      .dashboard-container {
+        padding: 1rem 0.875rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1rem);
+        gap: 1rem;
+      }
+
+      .dashboard-header h1 {
+        font-size: 1.25rem;
+      }
+
+      .subtitle {
+        font-size: 0.8125rem;
+      }
+
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.625rem;
+      }
+
+      .stat-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+        gap: 0.375rem;
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+      }
+
+      .task-item {
+        padding: 0.625rem 0.75rem;
+      }
+
+      .task-title {
+        font-size: 0.8125rem;
+      }
+
+      .mini-cell {
+        width: 8px;
+        height: 8px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .dashboard-container {
+        padding: 0.875rem 0.75rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 0.875rem);
+      }
+
+      .dashboard-header h1 {
+        font-size: 1.125rem;
+      }
+
+      .stats-row {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-card {
+        flex-direction: row;
+        align-items: center;
+        padding: 0.875rem;
+      }
+
+      .mini-cell {
+        width: 7px;
+        height: 7px;
+      }
+    }
   `]
+
 })
 export class DashboardComponent implements OnInit {
   public authService = inject(AuthService);

@@ -34,86 +34,105 @@ interface GridDisplayCell {
         </div>
       </header>
 
-      <!-- Stats Panel Row -->
-      <section class="stats-panel card">
-        <div class="stats-metric">
-          <span class="metric-label">Total Completions</span>
-          <span class="metric-value">{{ totalCompletions }}</span>
-          <span class="metric-sub">in {{ selectedYear }}</span>
-        </div>
-        <div class="stats-metric">
-          <span class="metric-label">Active Days</span>
-          <span class="metric-value">{{ activeDaysCount }}</span>
-          <span class="metric-sub">{{ ((activeDaysCount / 365) * 100) | number:'1.1-1' }}% of year</span>
-        </div>
-        <div class="stats-metric">
-          <span class="metric-label">Longest Streak</span>
-          <span class="metric-value">{{ streakData?.longestStreak || 0 }}</span>
-          <span class="metric-sub">days record</span>
-        </div>
-        <div class="stats-metric">
-          <span class="metric-label">Current Streak</span>
-          <span class="metric-value">{{ streakData?.currentStreak || 0 }}</span>
-          <span class="metric-sub">days active</span>
-        </div>
+      <!-- Stats Panel Row (animated counters) -->
+      <section class="stats-panel card" [class.loading]="loading">
+        <ng-container *ngIf="!loading; else skeletonStats">
+          <div class="stats-metric">
+            <span class="metric-label">Total Completions</span>
+            <span class="metric-value">{{ animatedTotalCompletions }}</span>
+            <span class="metric-sub">in {{ selectedYear }}</span>
+          </div>
+          <div class="stats-metric">
+            <span class="metric-label">Active Days</span>
+            <span class="metric-value">{{ animatedActiveDays }}</span>
+            <span class="metric-sub">{{ ((animatedActiveDays / 365) * 100) | number:'1.1-1' }}% of year</span>
+          </div>
+          <div class="stats-metric">
+            <span class="metric-label">Longest Streak</span>
+            <span class="metric-value">{{ animatedLongestStreak }}</span>
+            <span class="metric-sub">days record</span>
+          </div>
+          <div class="stats-metric">
+            <span class="metric-label">Current Streak</span>
+            <span class="metric-value text-accent">{{ animatedCurrentStreak }}</span>
+            <span class="metric-sub">days active</span>
+          </div>
+        </ng-container>
       </section>
 
-      <!-- The Contribution Grid -->
-      <section class="grid-wrapper card">
-        <div class="grid-card-header">
-          <h3>{{ totalCompletions }} completed tasks in {{ selectedYear }}</h3>
-          <div class="legend">
-            <span>Less</span>
-            <div class="legend-cell intensity-0"></div>
-            <div class="legend-cell intensity-1"></div>
-            <div class="legend-cell intensity-2"></div>
-            <div class="legend-cell intensity-3"></div>
-            <span>More</span>
-          </div>
+      <!-- Skeleton Stats Template -->
+      <ng-template #skeletonStats>
+        <div class="stats-metric" *ngFor="let i of [1,2,3,4]">
+          <div class="skeleton skeleton-label"></div>
+          <div class="skeleton skeleton-val"></div>
+          <div class="skeleton skeleton-sub"></div>
         </div>
+      </ng-template>
 
-        <div class="contribution-scroll">
-          <div class="contribution-grid-container">
-            <!-- Day labels column -->
-            <div class="day-labels">
-              <span>Sun</span>
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
+      <!-- The Contribution Grid -->
+      <section class="grid-wrapper card" [class.loading]="loading">
+        <ng-container *ngIf="!loading; else skeletonGrid">
+          <div class="grid-card-header">
+            <h3>{{ totalCompletions }} completed tasks in {{ selectedYear }}</h3>
+            <div class="legend">
+              <span>Less</span>
+              <div class="legend-cell intensity-0"></div>
+              <div class="legend-cell intensity-1"></div>
+              <div class="legend-cell intensity-2"></div>
+              <div class="legend-cell intensity-3"></div>
+              <span>More</span>
             </div>
+          </div>
 
-            <!-- Month labels wrapper -->
-            <div class="grid-content-area">
-              <div class="month-labels">
-                <span *ngFor="let month of monthHeaders" [style.grid-column-start]="month.colIndex">
-                  {{ month.name }}
-                </span>
+          <div class="contribution-scroll">
+            <div class="contribution-grid-container">
+              <!-- Day labels column -->
+              <div class="day-labels">
+                <span>Sun</span>
+                <span>Mon</span>
+                <span>Tue</span>
+                <span>Wed</span>
+                <span>Thu</span>
+                <span>Fri</span>
+                <span>Sat</span>
               </div>
 
-              <!-- Cells matrix -->
-              <div class="cells-matrix">
-                <div 
-                  *ngFor="let cell of displayCells" 
-                  [class]="'grid-cell intensity-' + cell.intensity"
-                  [class.placeholder-cell]="cell.isEmptyPlaceholder"
-                  [attr.data-tooltip]="cell.isEmptyPlaceholder ? null : (cell.date + ': ' + cell.tasksCompleted + ' completed task' + (cell.tasksCompleted === 1 ? '' : 's'))">
+              <!-- Month labels wrapper -->
+              <div class="grid-content-area">
+                <div class="month-labels">
+                  <span *ngFor="let month of monthHeaders" [style.grid-column-start]="month.colIndex">
+                    {{ month.name }}
+                  </span>
+                </div>
+
+                <!-- Cells matrix -->
+                <div class="cells-matrix">
+                  <div
+                    *ngFor="let cell of displayCells"
+                    [class]="'grid-cell intensity-' + cell.intensity"
+                    [class.placeholder-cell]="cell.isEmptyPlaceholder"
+                    [attr.data-tooltip]="cell.isEmptyPlaceholder ? null : (cell.date + ': ' + cell.tasksCompleted + ' completed task' + (cell.tasksCompleted === 1 ? '' : 's'))">
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </ng-container>
       </section>
 
+      <!-- Skeleton Grid Template -->
+      <ng-template #skeletonGrid>
+        <div class="skeleton skeleton-grid-header"></div>
+        <div class="skeleton skeleton-grid-body"></div>
+      </ng-template>
+
       <!-- Detailed Grid Analysis -->
-      <section class="grid-analysis-row">
+      <section class="grid-analysis-row" *ngIf="!loading">
         <!-- Frequency Breakdown -->
         <div class="card analysis-card">
           <h3>Consistency Habits</h3>
           <p class="subtitle">Distribution of task completing intensities throughout the year.</p>
-          
+
           <div class="intensity-bar-chart">
             <div class="bar-row">
               <div class="bar-label">No completions</div>
@@ -122,7 +141,7 @@ interface GridDisplayCell {
               </div>
               <div class="bar-value">{{ getIntensityCount(0) }} days</div>
             </div>
-            
+
             <div class="bar-row">
               <div class="bar-label">1-2 tasks (Low)</div>
               <div class="bar-fill-track">
@@ -279,8 +298,8 @@ interface GridDisplayCell {
     }
 
     .legend-cell {
-      width: 12px;
-      height: 12px;
+      width: 13px;
+      height: 13px;
       border-radius: 2px;
     }
 
@@ -297,23 +316,23 @@ interface GridDisplayCell {
 
     .contribution-grid-container {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.625rem;
       width: max-content;
     }
 
     .day-labels {
       display: grid;
-      grid-template-rows: repeat(7, 12px);
+      grid-template-rows: repeat(7, 13px);
       gap: 3px;
       font-size: 0.65rem;
       color: var(--text-muted);
       align-items: center;
-      padding-top: 15px; /* offset month row */
+      padding-top: 17px; /* offset month row */
     }
 
     .day-labels span {
-      height: 12px;
-      line-height: 12px;
+      height: 13px;
+      line-height: 13px;
     }
 
     .grid-content-area {
@@ -324,34 +343,52 @@ interface GridDisplayCell {
 
     .month-labels {
       display: grid;
-      grid-template-columns: repeat(53, 12px);
+      grid-template-columns: repeat(53, 13px);
       gap: 3px;
       font-size: 0.65rem;
       color: var(--text-muted);
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
 
     .cells-matrix {
       display: grid;
-      grid-template-rows: repeat(7, 12px);
+      grid-template-rows: repeat(7, 13px);
       grid-auto-flow: column;
       gap: 3px;
       position: relative;
     }
 
     .grid-cell {
-      width: 12px;
-      height: 12px;
+      width: 13px;
+      height: 13px;
       border-radius: 2px;
       background: var(--grid-intensity-0);
       position: relative;
       cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .grid-cell.intensity-0 { background: var(--grid-intensity-0); }
-    .grid-cell.intensity-1 { background: var(--grid-intensity-1); }
-    .grid-cell.intensity-2 { background: var(--grid-intensity-2); }
-    .grid-cell.intensity-3 { background: var(--grid-intensity-3); }
+    
+    .grid-cell.intensity-1 { 
+      background: var(--grid-intensity-1); 
+    }
+    
+    .grid-cell.intensity-2 { 
+      background: var(--grid-intensity-2); 
+      box-shadow: 0 0 3px rgba(120, 120, 128, 0.2);
+    }
+    
+    .grid-cell.intensity-3 { 
+      background: var(--grid-intensity-3); 
+      box-shadow: 0 0 6px rgba(199, 199, 204, 0.5);
+    }
+
+    .grid-cell:hover {
+      transform: scale(1.3);
+      box-shadow: 0 0 10px rgba(199, 199, 204, 0.8) !important;
+      z-index: 10;
+    }
     
     .placeholder-cell {
       opacity: 0;
@@ -359,23 +396,25 @@ interface GridDisplayCell {
       pointer-events: none;
     }
 
-    /* Tooltip styling */
+    /* Enhanced premium glass tooltip */
     .grid-cell[data-tooltip]:hover::after {
       content: attr(data-tooltip);
       position: absolute;
-      bottom: 18px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--surface-hover);
-      border: 1px solid var(--border-hover);
+      background: rgba(28, 28, 31, 0.9);
+      border: 1px solid var(--border-glow);
       color: var(--text-primary);
-      padding: 0.35rem 0.6rem;
+      padding: 0.45rem 0.75rem;
       border-radius: var(--radius);
-      font-size: 0.6875rem;
+      font-size: 0.7rem;
+      font-weight: 500;
       white-space: nowrap;
       z-index: 100;
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--glow-silver-sm);
       pointer-events: none;
+      backdrop-filter: blur(4px);
     }
 
     /* Analysis Panel */
@@ -473,6 +512,31 @@ interface GridDisplayCell {
       color: var(--text-secondary);
     }
 
+    /* Skeletons */
+    .skeleton-label {
+      height: 0.85rem;
+      width: 50%;
+      margin: 0 auto;
+    }
+    .skeleton-val {
+      height: 2rem;
+      width: 70%;
+      margin: 0.4rem auto;
+    }
+    .skeleton-sub {
+      height: 0.75rem;
+      width: 40%;
+      margin: 0 auto;
+    }
+    .skeleton-grid-header {
+      height: 1.5rem;
+      width: 40%;
+    }
+    .skeleton-grid-body {
+      height: 120px;
+      width: 100%;
+    }
+
     @media (max-width: 1024px) {
       .grid-analysis-row {
         grid-template-columns: 1fr;
@@ -481,8 +545,9 @@ interface GridDisplayCell {
 
     @media (max-width: 768px) {
       .grid-page-container {
-        padding: 1.5rem 1rem;
-        gap: 1.5rem;
+        padding: 1.25rem 1rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1.25rem);
+        gap: 1.25rem;
       }
 
       .grid-page-header {
@@ -495,13 +560,16 @@ interface GridDisplayCell {
         font-size: 1.4rem;
       }
 
+      .year-filter {
+        width: 100%;
+      }
+
       .year-select {
-        min-width: 100px;
+        min-width: 100%;
         padding: 0.45rem 0.65rem;
         font-size: 0.8125rem;
       }
 
-      /* Stats panel: 2x2 grid on mobile */
       .stats-panel {
         grid-template-columns: 1fr 1fr;
         gap: 0.75rem;
@@ -521,7 +589,6 @@ interface GridDisplayCell {
         font-size: 1.65rem;
       }
 
-      /* Grid card */
       .grid-wrapper {
         padding: 1.25rem 1rem;
         gap: 1rem;
@@ -537,7 +604,6 @@ interface GridDisplayCell {
         font-size: 0.875rem;
       }
 
-      /* Analysis */
       .analysis-card {
         padding: 1.25rem;
       }
@@ -552,7 +618,112 @@ interface GridDisplayCell {
         font-size: 0.75rem;
       }
     }
+
+    @media (max-width: 480px) {
+      .grid-page-container {
+        padding: 1rem 0.875rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 1rem);
+        gap: 1rem;
+      }
+
+      .grid-page-header h1 {
+        font-size: 1.25rem;
+      }
+
+      .subtitle {
+        font-size: 0.8125rem;
+      }
+
+      .stats-panel {
+        grid-template-columns: 1fr 1fr;
+        padding: 1rem;
+        gap: 0.625rem;
+      }
+
+      .metric-value {
+        font-size: 1.375rem;
+      }
+
+      .metric-label {
+        font-size: 0.6875rem;
+      }
+
+      .grid-wrapper {
+        padding: 1rem 0.75rem;
+      }
+
+      /* Make grid cells smaller for tight screens */
+      .grid-cell {
+        width: 11px;
+        height: 11px;
+      }
+
+      .cells-matrix {
+        grid-template-rows: repeat(7, 11px);
+      }
+
+      .day-labels {
+        grid-template-rows: repeat(7, 11px);
+      }
+
+      .month-labels {
+        grid-template-columns: repeat(53, 11px);
+      }
+
+      .bar-label {
+        width: 80px;
+        font-size: 0.6875rem;
+      }
+
+      .highlights-list li strong {
+        font-size: 0.8125rem;
+      }
+
+      .highlights-list li span {
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .grid-page-container {
+        padding: 0.875rem 0.75rem;
+        padding-bottom: calc(var(--mobile-nav-height) + 0.875rem);
+      }
+
+      .grid-page-header h1 {
+        font-size: 1.125rem;
+      }
+
+      .stats-panel {
+        grid-template-columns: 1fr 1fr;
+        padding: 0.875rem;
+        gap: 0.5rem;
+      }
+
+      .metric-value {
+        font-size: 1.25rem;
+      }
+
+      .grid-cell {
+        width: 10px;
+        height: 10px;
+      }
+
+      .cells-matrix {
+        grid-template-rows: repeat(7, 10px);
+      }
+
+      .day-labels {
+        grid-template-rows: repeat(7, 10px);
+        padding-top: 16px;
+      }
+
+      .month-labels {
+        grid-template-columns: repeat(53, 10px);
+      }
+    }
   `]
+
 })
 export class GridComponent implements OnInit {
   private gridService = inject(GridService);
@@ -561,6 +732,13 @@ export class GridComponent implements OnInit {
   public selectedYear = new Date().getFullYear();
   public availableYears: number[] = [2026, 2025];
   public streakData: StreakData | null = null;
+  public loading = true;
+
+  // Animated counters
+  public animatedTotalCompletions = 0;
+  public animatedActiveDays = 0;
+  public animatedLongestStreak = 0;
+  public animatedCurrentStreak = 0;
 
   // Grid Data
   public apiGridData: GridCell[] = [];
@@ -571,15 +749,19 @@ export class GridComponent implements OnInit {
   public totalCompletions = 0;
   public activeDaysCount = 0;
 
+  private counterIntervals: any[] = [];
+
   ngOnInit() {
     this.loadGridAndStreakData();
   }
 
   private loadGridAndStreakData() {
+    this.loading = true;
     forkJoin({
       grid: this.gridService.getGridData().pipe(catchError(() => of({ success: true, totalContributionDays: 0, gridData: [] }))),
       streak: this.streakService.getStreak().pipe(catchError(() => of({ success: true, streak: null })))
     }).subscribe(({ grid, streak }) => {
+      this.loading = false;
       if (grid.success && grid.gridData) {
         this.apiGridData = grid.gridData;
       }
@@ -587,17 +769,75 @@ export class GridComponent implements OnInit {
         this.streakData = streak.streak;
       }
       this.generateFullYearGrid();
+      this.startAnimatedCounters();
     });
   }
 
   public onYearChange() {
     this.generateFullYearGrid();
+    this.startAnimatedCounters();
+  }
+
+  private startAnimatedCounters() {
+    this.counterIntervals.forEach(i => clearInterval(i));
+    this.counterIntervals = [];
+
+    const targetTotal = this.totalCompletions;
+    const targetActive = this.activeDaysCount;
+    const targetLongest = this.streakData?.longestStreak || 0;
+    const targetCurrent = this.streakData?.currentStreak || 0;
+
+    this.animatedTotalCompletions = 0;
+    this.animatedActiveDays = 0;
+    this.animatedLongestStreak = 0;
+    this.animatedCurrentStreak = 0;
+
+    const totalStep = Math.max(1, Math.floor(targetTotal / 30));
+    const activeStep = Math.max(1, Math.floor(targetActive / 30));
+    const longestStep = Math.max(1, Math.floor(targetLongest / 30));
+    const currentStep = Math.max(1, Math.floor(targetCurrent / 30));
+
+    const iTotal = setInterval(() => {
+      if (this.animatedTotalCompletions < targetTotal) {
+        this.animatedTotalCompletions = Math.min(targetTotal, this.animatedTotalCompletions + totalStep);
+      } else {
+        clearInterval(iTotal);
+      }
+    }, 20);
+    this.counterIntervals.push(iTotal);
+
+    const iActive = setInterval(() => {
+      if (this.animatedActiveDays < targetActive) {
+        this.animatedActiveDays = Math.min(targetActive, this.animatedActiveDays + activeStep);
+      } else {
+        clearInterval(iActive);
+      }
+    }, 20);
+    this.counterIntervals.push(iActive);
+
+    const iLongest = setInterval(() => {
+      if (this.animatedLongestStreak < targetLongest) {
+        this.animatedLongestStreak = Math.min(targetLongest, this.animatedLongestStreak + longestStep);
+      } else {
+        clearInterval(iLongest);
+      }
+    }, 20);
+    this.counterIntervals.push(iLongest);
+
+    const iCurrent = setInterval(() => {
+      if (this.animatedCurrentStreak < targetCurrent) {
+        this.animatedCurrentStreak = Math.min(targetCurrent, this.animatedCurrentStreak + currentStep);
+      } else {
+        clearInterval(iCurrent);
+      }
+    }, 20);
+    this.counterIntervals.push(iCurrent);
   }
 
   private generateFullYearGrid() {
     const year = Number(this.selectedYear);
     const cells: GridDisplayCell[] = [];
-    
+
     // Create Date maps of API responses
     const dataMap = new Map<string, GridCell>();
     this.apiGridData.forEach(c => dataMap.set(c.date, c));
@@ -606,7 +846,7 @@ export class GridComponent implements OnInit {
     const startDate = new Date(year, 0, 1);
     // Dec 31st of Selected Year
     const endDate = new Date(year, 11, 31);
-    
+
     // Day of the week for Jan 1st (0 = Sun, 1 = Mon ... 6 = Sat)
     const startDayOfWeek = startDate.getDay();
 
@@ -626,7 +866,7 @@ export class GridComponent implements OnInit {
     // 2. Loop through all 365 (or 366) days
     const current = new Date(startDate);
     let cellCounter = startDayOfWeek;
-    
+
     this.totalCompletions = 0;
     this.activeDaysCount = 0;
 

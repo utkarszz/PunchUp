@@ -36,12 +36,14 @@
     left: 0;
     right: 0;
     height: 68px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    background: rgba(17, 17, 19, 0.92);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-glow);
     z-index: 200;
     padding: 0 0.25rem;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     gap: 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
   }
 
   .mobile-nav-item {
@@ -53,11 +55,10 @@
     gap: 4px;
     color: var(--text-muted);
     font-size: 0.625rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     padding: 0.5rem 0.25rem;
-    border-radius: var(--radius);
     transition: color var(--transition-fast), background-color var(--transition-fast);
     -webkit-tap-highlight-color: transparent;
     text-decoration: none;
@@ -79,14 +80,170 @@
   .mobile-nav-item:hover,
   .mobile-nav-item.active {
     color: var(--text-primary);
-    background: var(--surface-hover);
+  }
+
+  .mobile-nav-item.active svg {
+    filter: drop-shadow(0 0 6px rgba(199, 199, 204, 0.45));
   }
 
   /* Add bottom padding to main content so content clears the nav bar */
   .main-content {
-    height: calc(100vh - 68px);
-    padding-bottom: 0;
-    /* Account for iOS safe area */
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(100vh - env(safe-area-inset-bottom, 0px));
+    padding-bottom: 68px;
   }
 }
+
+/* Very small phones: ensure nothing overflows horizontally */
+@media (max-width: 480px) {
+  .app-layout,
+  .main-content,
+  .public-main {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  .mobile-nav-item span {
+    font-size: 0.5625rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-nav-item {
+    gap: 2px;
+    padding: 0.375rem 0.125rem;
+  }
+
+  .mobile-nav-item span {
+    font-size: 0.5rem;
+    letter-spacing: 0.02em;
+  }
+
+  .mobile-nav-item svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+
+/* ============================================
+   BACKEND WAKEUP OVERLAY
+   ============================================ */
+.wakeup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1.5rem;
+}
+
+.wakeup-container {
+  width: 100%;
+  max-width: 440px;
+  padding: 3.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glow-silver-md);
+}
+
+.wakeup-container .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.wakeup-container .logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.wakeup-spinner-container {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0.5rem 0;
+}
+
+.wakeup-ring-outer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-bottom-color: var(--accent);
+  border-radius: 50%;
+  animation: wakeup-spin-clockwise 1.8s linear infinite;
+}
+
+.wakeup-ring-inner {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  border: 2px solid transparent;
+  border-left-color: var(--text-muted);
+  border-right-color: var(--text-muted);
+  border-radius: 50%;
+  animation: wakeup-spin-counter 1.2s linear infinite;
+  opacity: 0.6;
+}
+
+.loading-message {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+  min-height: 2.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wakeup-retry-btn {
+  margin-top: 0.5rem;
+  animation: fadeIn 0.4s ease-out;
+  width: 100%;
+  justify-content: center;
+}
+
+@keyframes wakeup-spin-clockwise {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes wakeup-spin-counter {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@media (max-width: 480px) {
+  .wakeup-container {
+    padding: 2.5rem 1.5rem;
+    gap: 1.5rem;
+  }
+  
+  .wakeup-container .logo {
+    font-size: 1.5rem;
+  }
+}
+
+

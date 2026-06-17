@@ -1,48 +1,72 @@
-<div [class.app-layout]="isAuthenticated">
-  <app-sidebar *ngIf="isAuthenticated"></app-sidebar>
-  <main [class.main-content]="isAuthenticated" [class.public-main]="!isAuthenticated">
-    <router-outlet></router-outlet>
-  </main>
+<div *ngIf="!(wakeupService.isReady$ | async)" class="wakeup-overlay">
+  <div class="wakeup-container card animate-slide-up">
+    <div class="logo">
+      <img src="assets/logo.png" alt="PunchUp Logo" class="logo-img" />
+      <span class="logo-text">PunchUp</span>
+    </div>
+    
+    <div class="wakeup-spinner-container" *ngIf="!(wakeupService.hasFailed$ | async)">
+      <div class="wakeup-ring-outer"></div>
+      <div class="wakeup-ring-inner"></div>
+    </div>
+    
+    <p class="loading-message">{{ wakeupService.statusMessage$ | async }}</p>
+    
+    <button *ngIf="wakeupService.hasFailed$ | async" (click)="wakeupService.retryPing()" class="btn btn-primary wakeup-retry-btn">
+      Retry Connection
+    </button>
+  </div>
 </div>
 
-<!-- Mobile Bottom Navigation — only shown on small screens when authenticated -->
-<nav class="mobile-bottom-nav" *ngIf="isAuthenticated">
-  <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="mobile-nav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect>
-      <rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect>
-    </svg>
-    <span>Dashboard</span>
-  </a>
-  <a routerLink="/tasks" routerLinkActive="active" class="mobile-nav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-    </svg>
-    <span>Tasks</span>
-  </a>
-  <a routerLink="/grid" routerLinkActive="active" class="mobile-nav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line>
-      <line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line>
-    </svg>
-    <span>Grid</span>
-  </a>
-  <a routerLink="/analytics" routerLinkActive="active" class="mobile-nav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"></line>
-      <line x1="12" y1="20" x2="12" y2="4"></line>
-      <line x1="6" y1="20" x2="6" y2="14"></line>
-    </svg>
-    <span>Analytics</span>
-  </a>
-  <a routerLink="/profile" routerLinkActive="active" class="mobile-nav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-    <span>Profile</span>
-  </a>
-</nav>
+<div *ngIf="wakeupService.isReady$ | async">
+  <div [class.app-layout]="isAuthenticated">
+    <app-sidebar *ngIf="isAuthenticated"></app-sidebar>
+    <main [class.main-content]="isAuthenticated" [class.public-main]="!isAuthenticated">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 
-<app-command-palette *ngIf="isAuthenticated"></app-command-palette>
+  <!-- Mobile Bottom Navigation — only shown on small screens when authenticated -->
+  <nav class="mobile-bottom-nav" *ngIf="isAuthenticated">
+    <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="mobile-nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect>
+        <rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect>
+      </svg>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/tasks" routerLinkActive="active" class="mobile-nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+      </svg>
+      <span>Tasks</span>
+    </a>
+    <a routerLink="/grid" routerLinkActive="active" class="mobile-nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line>
+        <line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line>
+      </svg>
+      <span>Grid</span>
+    </a>
+    <a routerLink="/analytics" routerLinkActive="active" class="mobile-nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"></line>
+        <line x1="12" y1="20" x2="12" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="14"></line>
+      </svg>
+      <span>Analytics</span>
+    </a>
+    <a routerLink="/profile" routerLinkActive="active" class="mobile-nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <app-command-palette *ngIf="isAuthenticated"></app-command-palette>
+</div>
+
+<app-toast></app-toast>

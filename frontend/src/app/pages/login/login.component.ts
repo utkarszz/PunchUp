@@ -12,9 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="login-card card animate-slide-up">
         <!-- Logo -->
         <div class="logo">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="var(--text-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
+          <img src="assets/logo.png" alt="PunchUp Logo" class="logo-img" />
           <span class="logo-text">PunchUp</span>
         </div>
 
@@ -76,6 +74,12 @@ import { AuthService } from '../../core/services/auth.service';
 
     .logo-text {
       color: var(--text-primary);
+    }
+
+    .logo-img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
     }
 
     .header-text h2 {
