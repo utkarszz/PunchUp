@@ -95,6 +95,72 @@ Chart.register(...registerables);
           </div>
         </div>
       </section>
+
+      <!-- Advanced Productivity Insights Section -->
+      <section class="insights-section" [class.hidden]="!analyticsData">
+        <div class="insights-header">
+          <h3>Streak Insights & Habits Advisory</h3>
+          <p class="subtitle">Algorithmic suggestions for improving your daily performance loop.</p>
+        </div>
+
+        <div class="insights-grid">
+          <!-- Advice Card 1 -->
+          <div class="card insight-card border-accent">
+            <div class="insight-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-accent">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+            <div class="insight-content">
+              <h4>Optimal Completion Focus</h4>
+              <p *ngIf="(analyticsData?.completedTasks || 0) > 10">
+                You have completed a solid set of {{ analyticsData?.completedTasks }} tasks. At this volume, focus on breaking down your remaining {{ analyticsData?.pendingTasks }} tasks to maintain your throughput.
+              </p>
+              <p *ngIf="(analyticsData?.completedTasks || 0) <= 10">
+                You have completed {{ analyticsData?.completedTasks || 0 }} tasks. Starting out can be challenging; try completing at least 1 low-effort task daily to establish your rhythm.
+              </p>
+            </div>
+          </div>
+
+          <!-- Advice Card 2 -->
+          <div class="card insight-card border-success">
+            <div class="insight-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <div class="insight-content">
+              <h4>Streak Preservation Technique</h4>
+              <p *ngIf="(analyticsData?.currentStreak || 0) >= 5">
+                With a strong streak of {{ analyticsData?.currentStreak }} days, you are in a high-momentum consistency zone. Focus on visual progress to sustain this run.
+              </p>
+              <p *ngIf="(analyticsData?.currentStreak || 0) < 5">
+                Your active streak is {{ analyticsData?.currentStreak || 0 }} days. The early days are the hardest; aim to reach a 5-day milestone to cement the habit.
+              </p>
+            </div>
+          </div>
+
+          <!-- Advice Card 3 -->
+          <div class="card insight-card border-warning">
+            <div class="insight-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warning">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+            </div>
+            <div class="insight-content">
+              <h4>Priority Alignment Check</h4>
+              <p *ngIf="(analyticsData?.completionRate || 0) >= 75">
+                Your completion rate is outstanding at {{ (analyticsData?.completionRate || 0) | number:'1.0-0' }}%. Keep tasks small and manageable to defend this high level of efficiency.
+              </p>
+              <p *ngIf="(analyticsData?.completionRate || 0) < 75">
+                Your completion rate is {{ (analyticsData?.completionRate || 0) | number:'1.0-0' }}%. Since there are {{ analyticsData?.pendingTasks || 0 }} pending items, consider tackling high-priority tasks first.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   `,
   styles: [`
@@ -246,6 +312,75 @@ Chart.register(...registerables);
       width: 40%;
     }
 
+    /* Insights Section */
+    .insights-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      transition: opacity var(--transition-normal);
+    }
+    .insights-section.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .insights-header {
+      margin-bottom: 0.25rem;
+    }
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .insight-card {
+      padding: 1.5rem;
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .insight-card:hover {
+      transform: translateY(-2px);
+    }
+    .insight-card.border-accent:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(199, 199, 204, 0.15);
+    }
+    .insight-card.border-success:hover {
+      border-color: var(--success);
+      box-shadow: 0 0 12px rgba(46, 204, 113, 0.15);
+    }
+    .insight-card.border-warning:hover {
+      border-color: var(--warning);
+      box-shadow: 0 0 12px rgba(241, 196, 15, 0.15);
+    }
+    .insight-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+    .insight-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .insight-content h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .insight-content p {
+      font-size: 0.825rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
     @media (max-width: 1024px) {
       .stats-grid {
         grid-template-columns: 1fr 1fr;
@@ -255,6 +390,10 @@ Chart.register(...registerables);
       }
       .chart-card.full-width {
         grid-column: span 1;
+      }
+      .insights-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
       }
     }
 

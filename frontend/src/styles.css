@@ -320,7 +320,8 @@ label {
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
+  height: var(--visual-vh, 100dvh);
   background: rgba(9, 9, 11, 0.85);
   backdrop-filter: blur(8px);
   z-index: 1000;
@@ -342,6 +343,7 @@ label {
   position: relative;
   animation: slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   max-height: 90vh;
+  max-height: calc(var(--visual-vh, 100dvh) - 32px);
   overflow-y: auto;
 }
 
@@ -458,6 +460,7 @@ label {
   .modal-content {
     padding: 1.25rem;
     max-height: 88vh;
+    max-height: calc(var(--visual-vh, 100dvh) - 24px);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     margin-top: auto;
     width: 100%;
@@ -466,6 +469,8 @@ label {
   .modal-backdrop {
     align-items: flex-end;
     padding: 0;
+    height: 100dvh;
+    height: var(--visual-vh, 100dvh);
   }
 }
 
@@ -483,6 +488,7 @@ label {
   .modal-content {
     padding: 1rem;
     max-height: 92vh;
+    max-height: calc(var(--visual-vh, 100dvh) - 16px);
   }
 
   /* Prevent any horizontal overflow */

@@ -59,6 +59,17 @@
       </ng-container>
       <a href="#features" class="btn btn-secondary btn-lg">Explore Features</a>
     </div>
+
+    <!-- Animated Scroll Down Indicator -->
+    <div class="scroll-down-indicator animate-fade-in animate-stagger-7">
+      <a href="#features" class="scroll-down-link">
+        <span class="scroll-text">Explore PunchUp</span>
+        <svg class="down-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <polyline points="19 12 12 19 5 12"></polyline>
+        </svg>
+      </a>
+    </div>
   </section>
 
   <!-- Problem Section -->
@@ -201,6 +212,49 @@
             <div *ngFor="let cell of mockGrid.slice(0, 42)" [class]="'grid-cell intensity-' + cell.intensity"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Science of Consistency Section -->
+  <section class="section-reveal science-section">
+    <div class="section-tag">BEHAVIORAL SCIENCE</div>
+    <h2 class="section-title">Why compounding works.</h2>
+    <p class="section-subtitle">Consistency isn't about giant leaps; it is about minor daily iterations that compound over time.</p>
+
+    <div class="science-grid">
+      <div class="science-card card">
+        <div class="science-card-header">
+          <div class="science-badge">01 / MATH</div>
+          <h3>The 1.01 vs 0.99 Rule</h3>
+        </div>
+        <p class="science-desc">
+          Improving by just <strong>1% every day</strong> results in a <strong>37.7x improvement</strong> over the course of a year. Declining by 1% daily reduces your capacity down to almost zero. Momentum is math.
+        </p>
+        <div class="science-graph-wrapper">
+          <div class="science-line-up"></div>
+          <div class="science-line-down"></div>
+        </div>
+      </div>
+
+      <div class="science-card card">
+        <div class="science-card-header">
+          <div class="science-badge">02 / HABITS</div>
+          <h3>Cognitive Friction</h3>
+        </div>
+        <p class="science-desc">
+          Every time you decide whether to perform a habit, you consume willpower. By turning daily tasks into non-negotiable streaks, you bypass decision fatigue entirely. Your actions become automatic reflexes.
+        </p>
+      </div>
+
+      <div class="science-card card">
+        <div class="science-card-header">
+          <div class="science-badge">03 / MOMENTUM</div>
+          <h3>Visual Feedback</h3>
+        </div>
+        <p class="science-desc">
+          The brain craves immediate rewards. Traditional tasks offer delayed gratification. Our signature consistency grid turns invisible effort into a concrete visual board of progress, releasing dopamine on completion.
+        </p>
       </div>
     </div>
   </section>

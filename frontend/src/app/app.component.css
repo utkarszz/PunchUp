@@ -6,8 +6,8 @@
 
 .main-content {
   flex: 1;
-  overflow-y: auto;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--background);
 }
 
@@ -88,8 +88,9 @@
 
   /* Add bottom padding to main content so content clears the nav bar */
   .main-content {
-    height: calc(100vh - env(safe-area-inset-bottom, 0px));
-    padding-bottom: 68px;
+    min-height: calc(100vh - env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
 }
 

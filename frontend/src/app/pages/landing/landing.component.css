@@ -915,3 +915,181 @@
   }
 }
 
+/* Scroll Down Indicator */
+.scroll-down-indicator {
+  margin-top: 4.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scroll-down-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transition: color var(--transition-normal);
+}
+
+.scroll-down-link:hover {
+  color: var(--text-primary);
+}
+
+.down-arrow {
+  animation: bounce 2s infinite;
+  color: var(--text-muted);
+}
+
+.scroll-down-link:hover .down-arrow {
+  color: var(--primary);
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Science of Consistency Section */
+.science-section {
+  width: 100%;
+  max-width: 1200px;
+  padding: 8rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.science-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  width: 100%;
+  margin-top: 4rem;
+}
+
+.science-card {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.science-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.science-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-glow);
+  box-shadow: var(--glow-silver), var(--shadow-md);
+}
+
+.science-card:hover::before {
+  opacity: 1;
+}
+
+.science-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.science-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.1em;
+  background: rgba(199, 199, 204, 0.08);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+.science-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.science-desc {
+  color: var(--text-secondary);
+  font-size: 0.925rem;
+  line-height: 1.6;
+}
+
+.science-desc strong {
+  color: var(--text-primary);
+}
+
+.science-graph-wrapper {
+  margin-top: auto;
+  height: 60px;
+  position: relative;
+  opacity: 0.4;
+  transition: opacity var(--transition-normal);
+}
+
+.science-card:hover .science-graph-wrapper {
+  opacity: 0.95;
+}
+
+.science-line-up {
+  position: absolute;
+  bottom: 15px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--success), transparent);
+  transform: rotate(-10deg);
+  transform-origin: left;
+}
+
+.science-line-down {
+  position: absolute;
+  bottom: 25px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--danger), transparent);
+  transform: rotate(10deg);
+  transform-origin: left;
+}
+
+@media (max-width: 968px) {
+  .science-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .science-section {
+    padding: 5rem 0;
+  }
+}
+
