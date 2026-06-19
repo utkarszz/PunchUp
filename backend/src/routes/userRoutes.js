@@ -14,6 +14,6 @@ router.get("/me", protect, getMyProfile);
 
 router.put("/me", protect, updateProfile);
 
-router.get("/:id", getUserProfile);
+router.get("/:username", getUserProfile);
 
 module.exports = router;

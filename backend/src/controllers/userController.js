@@ -58,8 +58,9 @@ const updateProfile = async (req, res) => {
 
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id)
-      .select("-__v -googleId");
+    const user = await User.findOne({
+      username: req.params.username.toLowerCase(),
+    }).select("-__v -googleId");
 
     if (!user) {
       return res.status(404).json({
@@ -80,7 +81,6 @@ const getUserProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-
       profile: {
         user,
 
