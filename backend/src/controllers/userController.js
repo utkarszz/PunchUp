@@ -102,9 +102,20 @@ const getUserProfile = async (req, res) => {
     });
   }
 };
+const migrateUsernames = require("../utils/migrateUsernames");
+
+const runMigration = async (req, res) => {
+  await migrateUsernames();
+
+  res.status(200).json({
+    success: true,
+    message: "Migration completed",
+  });
+};
 
 module.exports = {
   getMyProfile,
   updateProfile,
   getUserProfile,
+  runMigration,
 };
