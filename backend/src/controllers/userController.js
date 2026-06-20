@@ -22,9 +22,15 @@ const getMyProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { username, bio } = req.body;
+    const {
+      displayName,
+      username,
+      bio,
+    } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -33,8 +39,46 @@ const updateProfile = async (req, res) => {
       });
     }
 
+    if (displayName) {
+      user.displayName = displayName;
+    }
+
     if (username) {
-      user.username = username;
+      const normalizedUsername =
+        username.toLowerCase();
+
+      if (
+        !/^[a-z0-9_]{3,20}$/.test(
+          normalizedUsername
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Username must be 3-20 characters and contain only letters, numbers and underscores",
+        });
+      }
+
+      const existingUser =
+        await User.findOne({
+          username:
+            normalizedUsername,
+        });
+
+      if (
+        existingUser &&
+        existingUser._id.toString() !==
+          user._id.toString()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Username already taken",
+        });
+      }
+
+      user.username =
+        normalizedUsername;
     }
 
     if (bio !== undefined) {
@@ -48,7 +92,36 @@ const updateProfile = async (req, res) => {
       user,
     });
   } catch (error) {
-    console.error("updateProfile Error:", error);
+    console.error(
+      "updateProfile Error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const checkUsername = async (
+  req,
+  res
+) => {
+  try {
+    const username =
+      req.params.username.toLowerCase();
+
+    const existingUser =
+      await User.findOne({
+        username,
+      });
+
+    res.status(200).json({
+      success: true,
+      available: !existingUser,
+    });
+  } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message,
@@ -118,4 +191,5 @@ module.exports = {
   updateProfile,
   getUserProfile,
   runMigration,
+  checkUsername,
 };

@@ -7,6 +7,7 @@ const {
   getMyProfile,
   updateProfile,
   getUserProfile,
+  checkUsername,
  
 } = require("../controllers/userController");
 
@@ -15,6 +16,10 @@ const router = express.Router();
 router.get("/me", protect, getMyProfile);
 
 router.put("/me", protect, updateProfile);
+router.get(
+  "/check-username/:username",
+  checkUsername
+);
 
 router.get("/:username", getUserProfile);
 
