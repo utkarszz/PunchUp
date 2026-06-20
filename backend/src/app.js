@@ -9,6 +9,8 @@ const gridRoutes = require("./routes/gridRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const userRoutes = require("./routes/userRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const postRoutes = require("./routes/postRoutes");
+
 const app = express();
 
 const allowedOrigins = [
@@ -37,6 +39,7 @@ app.use("/api/grid", gridRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/posts", postRoutes);
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
