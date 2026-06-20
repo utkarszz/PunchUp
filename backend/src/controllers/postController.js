@@ -25,16 +25,42 @@ const createPost = async (req, res) => {
 
 const getPosts = async (req, res) => {
   try {
+    const page =
+      parseInt(req.query.page) || 1;
+
+    const limit =
+      parseInt(req.query.limit) || 10;
+
+    const skip =
+      (page - 1) * limit;
+
+    const totalPosts =
+      await Post.countDocuments();
+
     const posts = await Post.find()
       .populate(
         "user",
         "username displayName profilePicture"
       )
-      .sort({ createdAt: -1 });
+      .sort({
+        createdAt: -1,
+      })
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       success: true,
+
+      currentPage: page,
+
+      totalPages: Math.ceil(
+        totalPosts / limit
+      ),
+
+      totalPosts,
+
       count: posts.length,
+
       posts,
     });
   } catch (error) {
@@ -78,6 +104,15 @@ const getUserPosts = async (
   res
 ) => {
   try {
+    const page =
+      parseInt(req.query.page) || 1;
+
+    const limit =
+      parseInt(req.query.limit) || 10;
+
+    const skip =
+      (page - 1) * limit;
+
     const user = await User.findOne({
       username:
         req.params.username.toLowerCase(),
@@ -90,6 +125,11 @@ const getUserPosts = async (
       });
     }
 
+    const totalPosts =
+      await Post.countDocuments({
+        user: user._id,
+      });
+
     const posts = await Post.find({
       user: user._id,
     })
@@ -99,11 +139,23 @@ const getUserPosts = async (
       )
       .sort({
         createdAt: -1,
-      });
+      })
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       success: true,
+
+      currentPage: page,
+
+      totalPages: Math.ceil(
+        totalPosts / limit
+      ),
+
+      totalPosts,
+
       count: posts.length,
+
       posts,
     });
   } catch (error) {
