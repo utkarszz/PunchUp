@@ -10,6 +10,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const userRoutes = require("./routes/userRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const postRoutes = require("./routes/postRoutes");
+const commentRoutes = require("./routes/commentRoutes");
 
 const app = express();
 
@@ -40,6 +41,10 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/posts", postRoutes);
+app.use(
+  "/api/comments",
+  commentRoutes
+);
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
