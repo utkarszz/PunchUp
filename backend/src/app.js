@@ -11,6 +11,7 @@ const userRoutes = require("./routes/userRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const postRoutes = require("./routes/postRoutes");
 const commentRoutes = require("./routes/commentRoutes");
+const followRoutes = require("./routes/followRoutes");
 
 const app = express();
 
@@ -44,6 +45,10 @@ app.use("/api/posts", postRoutes);
 app.use(
   "/api/comments",
   commentRoutes
+);
+app.use(
+  "/api/follows",
+  followRoutes
 );
 app.get('/', (req, res) => {
   res.status(200).json({
