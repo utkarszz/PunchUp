@@ -7,6 +7,7 @@ const {
   getMyProfile,
   updateProfile,
   getUserProfile,
+  searchUsers,
   checkUsername,
  
 } = require("../controllers/userController");
@@ -19,6 +20,10 @@ router.put("/me", protect, updateProfile);
 router.get(
   "/check-username/:username",
   checkUsername
+);
+router.get(
+  "/search",
+  searchUsers
 );
 
 router.get("/:username", getUserProfile);

@@ -261,11 +261,52 @@ const runMigration = async (
     message: "Migration completed",
   });
 };
+const searchUsers = async (
+  req,
+  res
+) => {
+  try {
+    const query =
+      req.query.q?.trim();
+
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Search query is required",
+      });
+    }
+
+    const users =
+      await User.find({
+        username: {
+          $regex: query,
+          $options: "i",
+        },
+      })
+        .select(
+          "username displayName profilePicture bio"
+        )
+        .limit(20);
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getMyProfile,
   updateProfile,
   getUserProfile,
+  searchUsers,
   runMigration,
   checkUsername,
 };
