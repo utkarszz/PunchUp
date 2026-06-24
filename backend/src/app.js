@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -14,6 +15,8 @@ const commentRoutes = require("./routes/commentRoutes");
 const followRoutes = require("./routes/followRoutes");
 
 const app = express();
+app.set('trust proxy', true);
+
 
 const allowedOrigins = [
   'http://localhost:4200',

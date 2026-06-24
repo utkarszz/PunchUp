@@ -80,11 +80,12 @@ export class AuthService {
     // The interceptor will add the authorization header, but we also specify it here in case the interceptor isn't fully active
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
-    return this.http.get<{ success: boolean; user: UserProfile }>(`${environment.apiUrl}/api/users/me`, { headers }).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/api/users/me`, { headers }).pipe(
       map(response => {
-        if (response?.success && response?.user) {
-          this.currentUserSubject.next(response.user);
-          return response.user;
+        const user = response?.user || response?.profile?.user;
+        if (response?.success && user) {
+          this.currentUserSubject.next(user);
+          return user;
         }
         throw new Error('Profile request unsuccessful');
       }),

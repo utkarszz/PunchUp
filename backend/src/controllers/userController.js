@@ -301,12 +301,61 @@ const searchUsers = async (
     });
   }
 };
+const getSuggestions =
+  async (req, res) => {
+    try {
+      const follows =
+        await Follow.find({
+          follower:
+            req.user._id,
+        }).select(
+          "following"
+        );
+
+      const followedIds =
+        follows.map(
+          (follow) =>
+            follow.following
+        );
+
+      followedIds.push(
+        req.user._id
+      );
+
+      const suggestions =
+        await User.find({
+          _id: {
+            $nin:
+              followedIds,
+          },
+        })
+          .select(
+            "username displayName profilePicture bio"
+          )
+          .limit(10);
+
+      res.status(200).json({
+        success: true,
+        count:
+          suggestions.length,
+        users:
+          suggestions,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message:
+          error.message,
+      });
+    }
+  };
 
 module.exports = {
   getMyProfile,
   updateProfile,
   getUserProfile,
   searchUsers,
+  getSuggestions,
   runMigration,
   checkUsername,
 };
