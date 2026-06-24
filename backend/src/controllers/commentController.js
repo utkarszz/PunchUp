@@ -1,5 +1,6 @@
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
+const Notification = require("../models/Notification");
 
 const createComment = async (
   req,
@@ -29,6 +30,16 @@ const createComment = async (
     post.commentsCount += 1;
 
     await post.save();
+
+    // Create notification (if not commenting on own post)
+    if (post.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        recipient: post.user,
+        sender: req.user._id,
+        type: "comment",
+        post: post._id,
+      });
+    }
 
     res.status(201).json({
       success: true,

@@ -11,12 +11,22 @@ const createTask = async (req, res) => {
       dueDate,
     } = req.body;
 
+    if (dueDate) {
+      const parsedDate = new Date(dueDate);
+      if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid due date format",
+        });
+      }
+    }
+
     const task = await Task.create({
       title,
       description,
       priority,
       category,
-      dueDate,
+      dueDate: dueDate ? new Date(dueDate) : undefined,
       user: req.user._id,
     });
 
@@ -63,6 +73,22 @@ const updateTask = async (req, res) => {
         success: false,
         message: "Task not found",
       });
+    }
+
+    const { dueDate } = req.body;
+    if (dueDate !== undefined) {
+      if (dueDate) {
+        const parsedDate = new Date(dueDate);
+        if (isNaN(parsedDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid due date format",
+          });
+        }
+        req.body.dueDate = parsedDate;
+      } else {
+        req.body.dueDate = null;
+      }
     }
 
     const updatedTask = await Task.findByIdAndUpdate(

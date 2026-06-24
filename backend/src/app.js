@@ -59,7 +59,9 @@ app.get('/', (req, res) => {
     message:"PunchUp API Running Successfully"
   });
 });
+const notificationRoutes = require("./routes/notificationRoutes");
 const testRoute = require('./routes/testRoute');
 app.use('/api/test', testRoute);
+app.use('/api/notifications', notificationRoutes);
 
 module.exports = app;

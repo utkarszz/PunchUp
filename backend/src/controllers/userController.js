@@ -8,55 +8,43 @@ const migrateUsernames = require("../utils/migrateUsernames");
 
 const getMyProfile = async (req, res) => {
   try {
-    const user = await User.findById(
-      req.user._id
-    ).select("-__v");
+    const user = await User.findById(req.user._id).select("-__v");
 
     const streak = await Streak.findOne({
       user: user._id,
     });
 
-    const totalTasksCompleted =
-      await Task.countDocuments({
-        user: user._id,
-        completed: true,
-      });
+    const totalTasksCompleted = await Task.countDocuments({
+      user: user._id,
+      completed: true,
+    });
 
-    const posts =
-      await Post.countDocuments({
-        user: user._id,
-      });
+    const postsCount = await Post.countDocuments({
+      user: user._id,
+    });
 
-    const followers =
-      await Follow.countDocuments({
-        following: user._id,
-      });
+    const followersCount = await Follow.countDocuments({
+      following: user._id,
+    });
 
-    const following =
-      await Follow.countDocuments({
-        follower: user._id,
-      });
+    const followingCount = await Follow.countDocuments({
+      follower: user._id,
+    });
 
     res.status(200).json({
       success: true,
-
       profile: {
         user,
-
         stats: {
-          currentStreak:
-            streak?.currentStreak || 0,
-
-          longestStreak:
-            streak?.longestStreak || 0,
-
+          currentStreak: streak?.currentStreak || 0,
+          longestStreak: streak?.longestStreak || 0,
           totalTasksCompleted,
-
-          posts,
-
-          followers,
-
-          following,
+          posts: postsCount,
+          postsCount,
+          followers: followersCount,
+          followersCount,
+          following: followingCount,
+          followingCount,
         },
       },
     });
@@ -70,15 +58,9 @@ const getMyProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const {
-      displayName,
-      username,
-      bio,
-    } = req.body;
+    const { displayName, username, bio } = req.body;
 
-    const user = await User.findById(
-      req.user._id
-    );
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
@@ -92,14 +74,9 @@ const updateProfile = async (req, res) => {
     }
 
     if (username) {
-      const normalizedUsername =
-        username.toLowerCase();
+      const normalizedUsername = username.toLowerCase();
 
-      if (
-        !/^[a-z0-9_]{3,20}$/.test(
-          normalizedUsername
-        )
-      ) {
+      if (!/^[a-z0-9_]{3,20}$/.test(normalizedUsername)) {
         return res.status(400).json({
           success: false,
           message:
@@ -107,26 +84,21 @@ const updateProfile = async (req, res) => {
         });
       }
 
-      const existingUser =
-        await User.findOne({
-          username:
-            normalizedUsername,
-        });
+      const existingUser = await User.findOne({
+        username: normalizedUsername,
+      });
 
       if (
         existingUser &&
-        existingUser._id.toString() !==
-          user._id.toString()
+        existingUser._id.toString() !== user._id.toString()
       ) {
         return res.status(400).json({
           success: false,
-          message:
-            "Username already taken",
+          message: "Username already taken",
         });
       }
 
-      user.username =
-        normalizedUsername;
+      user.username = normalizedUsername;
     }
 
     if (bio !== undefined) {
@@ -140,10 +112,7 @@ const updateProfile = async (req, res) => {
       user,
     });
   } catch (error) {
-    console.error(
-      "updateProfile Error:",
-      error
-    );
+    console.error("updateProfile Error:", error);
 
     res.status(500).json({
       success: false,
@@ -152,18 +121,13 @@ const updateProfile = async (req, res) => {
   }
 };
 
-const checkUsername = async (
-  req,
-  res
-) => {
+const checkUsername = async (req, res) => {
   try {
-    const username =
-      req.params.username.toLowerCase();
+    const username = req.params.username.toLowerCase();
 
-    const existingUser =
-      await User.findOne({
-        username,
-      });
+    const existingUser = await User.findOne({
+      username,
+    });
 
     res.status(200).json({
       success: true,
@@ -177,14 +141,10 @@ const checkUsername = async (
   }
 };
 
-const getUserProfile = async (
-  req,
-  res
-) => {
+const getUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({
-      username:
-        req.params.username.toLowerCase(),
+      username: req.params.username.toLowerCase(),
     }).select("-__v -googleId");
 
     if (!user) {
@@ -198,47 +158,37 @@ const getUserProfile = async (
       user: user._id,
     });
 
-    const totalTasksCompleted =
-      await Task.countDocuments({
-        user: user._id,
-        completed: true,
-      });
+    const totalTasksCompleted = await Task.countDocuments({
+      user: user._id,
+      completed: true,
+    });
 
-    const posts =
-      await Post.countDocuments({
-        user: user._id,
-      });
+    const postsCount = await Post.countDocuments({
+      user: user._id,
+    });
 
-    const followers =
-      await Follow.countDocuments({
-        following: user._id,
-      });
+    const followersCount = await Follow.countDocuments({
+      following: user._id,
+    });
 
-    const following =
-      await Follow.countDocuments({
-        follower: user._id,
-      });
+    const followingCount = await Follow.countDocuments({
+      follower: user._id,
+    });
 
     res.status(200).json({
       success: true,
-
       profile: {
         user,
-
         stats: {
-          currentStreak:
-            streak?.currentStreak || 0,
-
-          longestStreak:
-            streak?.longestStreak || 0,
-
+          currentStreak: streak?.currentStreak || 0,
+          longestStreak: streak?.longestStreak || 0,
           totalTasksCompleted,
-
-          posts,
-
-          followers,
-
-          following,
+          posts: postsCount,
+          postsCount,
+          followers: followersCount,
+          followersCount,
+          following: followingCount,
+          followingCount,
         },
       },
     });
@@ -250,10 +200,7 @@ const getUserProfile = async (
   }
 };
 
-const runMigration = async (
-  req,
-  res
-) => {
+const runMigration = async (req, res) => {
   await migrateUsernames();
 
   res.status(200).json({
@@ -261,33 +208,26 @@ const runMigration = async (
     message: "Migration completed",
   });
 };
-const searchUsers = async (
-  req,
-  res
-) => {
+
+const searchUsers = async (req, res) => {
   try {
-    const query =
-      req.query.q?.trim();
+    const query = req.query.q?.trim();
 
     if (!query) {
       return res.status(400).json({
         success: false,
-        message:
-          "Search query is required",
+        message: "Search query is required",
       });
     }
 
-    const users =
-      await User.find({
-        username: {
-          $regex: query,
-          $options: "i",
-        },
-      })
-        .select(
-          "username displayName profilePicture bio"
-        )
-        .limit(20);
+    const users = await User.find({
+      username: {
+        $regex: query,
+        $options: "i",
+      },
+    })
+      .select("username displayName profilePicture bio")
+      .limit(20);
 
     res.status(200).json({
       success: true,
@@ -301,54 +241,37 @@ const searchUsers = async (
     });
   }
 };
-const getSuggestions =
-  async (req, res) => {
-    try {
-      const follows =
-        await Follow.find({
-          follower:
-            req.user._id,
-        }).select(
-          "following"
-        );
 
-      const followedIds =
-        follows.map(
-          (follow) =>
-            follow.following
-        );
+const getSuggestions = async (req, res) => {
+  try {
+    const follows = await Follow.find({
+      follower: req.user._id,
+    }).select("following");
 
-      followedIds.push(
-        req.user._id
-      );
+    const followedIds = follows.map((follow) => follow.following);
 
-      const suggestions =
-        await User.find({
-          _id: {
-            $nin:
-              followedIds,
-          },
-        })
-          .select(
-            "username displayName profilePicture bio"
-          )
-          .limit(10);
+    followedIds.push(req.user._id);
 
-      res.status(200).json({
-        success: true,
-        count:
-          suggestions.length,
-        users:
-          suggestions,
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message:
-          error.message,
-      });
-    }
-  };
+    const suggestions = await User.find({
+      id: {
+        $nin: followedIds,
+      },
+    })
+      .select("username displayName profilePicture bio")
+      .limit(10);
+
+    res.status(200).json({
+      success: true,
+      count: suggestions.length,
+      users: suggestions,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getMyProfile,
