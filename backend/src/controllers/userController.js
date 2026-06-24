@@ -1,16 +1,64 @@
 const User = require("../models/User");
 const Streak = require("../models/Streak");
 const Task = require("../models/Task");
+const Post = require("../models/Post");
+const Follow = require("../models/Follow");
+
+const migrateUsernames = require("../utils/migrateUsernames");
 
 const getMyProfile = async (req, res) => {
   try {
     const user = await User.findById(
       req.user._id
-    ).select("-__v -currentStreak -longestStreak -totalTasksCompleted");
+    ).select("-__v");
+
+    const streak = await Streak.findOne({
+      user: user._id,
+    });
+
+    const totalTasksCompleted =
+      await Task.countDocuments({
+        user: user._id,
+        completed: true,
+      });
+
+    const posts =
+      await Post.countDocuments({
+        user: user._id,
+      });
+
+    const followers =
+      await Follow.countDocuments({
+        following: user._id,
+      });
+
+    const following =
+      await Follow.countDocuments({
+        follower: user._id,
+      });
 
     res.status(200).json({
       success: true,
-      user,
+
+      profile: {
+        user,
+
+        stats: {
+          currentStreak:
+            streak?.currentStreak || 0,
+
+          longestStreak:
+            streak?.longestStreak || 0,
+
+          totalTasksCompleted,
+
+          posts,
+
+          followers,
+
+          following,
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -129,10 +177,14 @@ const checkUsername = async (
   }
 };
 
-const getUserProfile = async (req, res) => {
+const getUserProfile = async (
+  req,
+  res
+) => {
   try {
     const user = await User.findOne({
-      username: req.params.username.toLowerCase(),
+      username:
+        req.params.username.toLowerCase(),
     }).select("-__v -googleId");
 
     if (!user) {
@@ -152,8 +204,24 @@ const getUserProfile = async (req, res) => {
         completed: true,
       });
 
+    const posts =
+      await Post.countDocuments({
+        user: user._id,
+      });
+
+    const followers =
+      await Follow.countDocuments({
+        following: user._id,
+      });
+
+    const following =
+      await Follow.countDocuments({
+        follower: user._id,
+      });
+
     res.status(200).json({
       success: true,
+
       profile: {
         user,
 
@@ -165,6 +233,12 @@ const getUserProfile = async (req, res) => {
             streak?.longestStreak || 0,
 
           totalTasksCompleted,
+
+          posts,
+
+          followers,
+
+          following,
         },
       },
     });
@@ -175,9 +249,11 @@ const getUserProfile = async (req, res) => {
     });
   }
 };
-const migrateUsernames = require("../utils/migrateUsernames");
 
-const runMigration = async (req, res) => {
+const runMigration = async (
+  req,
+  res
+) => {
   await migrateUsernames();
 
   res.status(200).json({
