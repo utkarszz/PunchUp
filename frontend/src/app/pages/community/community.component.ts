@@ -1,339 +1,818 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface FeaturePreview {
-  title: string;
-  description: string;
-  icon: string;
-  tag: string;
-}
+import { RouterLink } from '@angular/router';
+import { PostService, Post, Comment } from '../../core/services/post.service';
+import { FollowService, FollowUser } from '../../core/services/follow.service';
+import { AuthService } from '../../core/services/auth.service';
+import { UploadService } from '../../core/services/upload.service';
 
 @Component({
   selector: 'app-community',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="community-page-container animate-fade-in">
-      <!-- Premium coming soon banner -->
-      <header class="community-header animate-slide-up">
-        <div class="coming-soon-pill">COMING SOON</div>
-        <h1 class="coming-soon-title">Community launches in <span class="highlight">Version 2</span></h1>
-        <p class="subtitle">Social accountability meets daily consistency. We are building features to help you commit, grow, and protect streaks together.</p>
-      </header>
+    <div class="community-container animate-fade-in">
 
-      <!-- Preview Cards Grid -->
-      <div class="previews-grid animate-slide-up animate-stagger-2">
-        <div *ngFor="let feat of previewFeatures" class="card preview-card">
-          <div class="preview-header-row">
-            <span class="preview-icon">
-              <ng-container [ngSwitch]="feat.icon">
-                <svg *ngSwitchCase="'Team'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                <svg *ngSwitchCase="'Activity'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                <svg *ngSwitchCase="'Chat'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                <svg *ngSwitchCase="'Achievements'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path><path d="M12 2a6 6 0 0 1 6 6v4H6V8a6 6 0 0 1 6-6z"></path></svg>
-              </ng-container>
-            </span>
-            <span class="v2-tag">{{ feat.tag }}</span>
-          </div>
-          <h3>{{ feat.title }}</h3>
-          <p>{{ feat.description }}</p>
+      <!-- Left: Feed -->
+      <main class="feed-column">
+        <div class="page-title animate-slide-up">
+          <h1>Community</h1>
+          <p class="subtitle">Share your progress. Inspire others.</p>
         </div>
-      </div>
 
-      <!-- Interest Section -->
-      <section class="interest-section card animate-slide-up animate-stagger-3">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style="color: var(--text-primary);">
-          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-        </svg>
-        <h3>Follow Utkarsh on LinkedIn</h3>
-        <p>Follow my LinkedIn to get updates about Version 2.</p>
-        <a href="https://www.linkedin.com/in/utkarsh-singh-6a560037a/" target="_blank" class="btn btn-primary" style="margin-top: 0.5rem; gap: 0.75rem;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-          <span>Follow on LinkedIn</span>
-        </a>
-      </section>
+        <!-- Composer -->
+        <div class="card composer-card animate-slide-up" *ngIf="authService.currentUser$ | async as me">
+          <div class="composer-top">
+            <img
+              [src]="me.profilePicture || 'assets/default-avatar.png'"
+              class="composer-avatar"
+              alt="You"
+              onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=me'"
+            />
+            <textarea
+              class="composer-input"
+              [(ngModel)]="newPostContent"
+              placeholder="What are you working on today?"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <!-- Image Previews -->
+          <div class="composer-attachments" *ngIf="uploadedImages.length > 0 || isUploadingImage">
+            <div class="attachment-preview" *ngFor="let img of uploadedImages; let idx = index">
+              <img [src]="img" alt="Attachment" />
+              <button type="button" class="remove-attachment-btn" (click)="removeAttachment(idx)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="attachment-preview loading-attachment" *ngIf="isUploadingImage">
+              <div class="spinner-small"></div>
+            </div>
+          </div>
+
+          <div class="composer-actions">
+            <button type="button" class="btn-icon-composer" (click)="imageInput.click()" [disabled]="isUploadingImage || uploadedImages.length >= 4" title="Attach Image">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </button>
+            <input #imageInput type="file" accept="image/*" style="display:none" (change)="onFileSelected($event)" />
+
+            <span class="char-count" [class.over]="newPostContent.length > 500">
+              {{ newPostContent.length }}/500
+            </span>
+            <button
+              class="btn btn-primary btn-sm"
+              (click)="submitPost()"
+              [disabled]="(!newPostContent.trim() && uploadedImages.length === 0) || newPostContent.length > 500 || isPosting || isUploadingImage"
+            >
+              {{ isPosting ? 'Posting...' : 'Post' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Feed Loading -->
+        <div class="skeleton-feed" *ngIf="isLoading">
+          <div class="skeleton-post card" *ngFor="let i of [1,2,3]"></div>
+        </div>
+
+        <!-- Feed Empty -->
+        <div class="empty-feed card" *ngIf="!isLoading && posts.length === 0">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <p>No posts yet. Be the first to share your progress!</p>
+        </div>
+
+        <!-- Posts Feed -->
+        <div class="feed-list" *ngIf="!isLoading && posts.length > 0">
+          <article class="card post-card animate-slide-up" *ngFor="let post of posts; let i = index">
+            <div class="post-header">
+              <a [routerLink]="['/user', post.user.username]" class="post-author-link">
+                <img
+                  [src]="post.user.profilePicture || 'assets/default-avatar.png'"
+                  class="post-avatar"
+                  [alt]="post.user.username"
+                  onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=u'"
+                />
+                <div class="post-author-info">
+                  <span class="post-display-name">{{ post.user.displayName || post.user.username }}</span>
+                  <span class="post-username">&#64;{{ post.user.username }}</span>
+                </div>
+              </a>
+              <span class="post-time">{{ getRelativeTime(post.createdAt) }}</span>
+            </div>
+
+            <p class="post-content">{{ post.content }}</p>
+
+            <div class="post-images" *ngIf="post.images && post.images.length > 0">
+              <img *ngFor="let img of post.images" [src]="img" class="post-image" alt="Post image" />
+            </div>
+
+            <div class="post-actions">
+              <button class="action-btn" [class.active]="isLiked(post)" (click)="toggleLike(post)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span>{{ post.likes.length }}</span>
+              </button>
+
+              <button class="action-btn" (click)="toggleComments(post._id)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>{{ post.commentsCount || 0 }}</span>
+              </button>
+
+              <button class="action-btn" [class.active]="isSaved(post)" (click)="toggleSave(post)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>{{ post.saves?.length || 0 }}</span>
+              </button>
+            </div>
+
+            <!-- Comments -->
+            <div class="comments-section" *ngIf="openCommentPostId === post._id">
+              <div class="comments-list">
+                <div class="comment-item" *ngFor="let c of (commentMap[post._id] || [])">
+                  <img
+                    [src]="c.user.profilePicture || 'assets/default-avatar.png'"
+                    class="comment-avatar"
+                    [alt]="c.user.username"
+                    onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=c'"
+                  />
+                  <div class="comment-body" style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                      <span class="comment-author">{{ c.user.displayName || c.user.username }}</span>
+                      <button 
+                        *ngIf="c.user._id === currentUserId || post.user._id === currentUserId" 
+                        class="btn-icon delete-comment-btn" 
+                        (click)="deleteComment(post, c._id)"
+                        title="Delete Comment"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    </div>
+                    <p class="comment-text">{{ c.content }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="comment-input-row">
+                <input
+                  type="text"
+                  class="input"
+                  [(ngModel)]="commentDraft[post._id]"
+                  placeholder="Write a comment..."
+                  (keydown.enter)="submitComment(post)"
+                />
+                <button class="btn btn-primary btn-sm" (click)="submitComment(post)">Send</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </main>
+
+      <!-- Right: Suggested Users -->
+      <aside class="suggestions-column">
+        <div class="card suggestions-card animate-slide-up">
+          <h3 class="suggestions-title">People to Follow</h3>
+          <div class="suggestions-loading" *ngIf="loadingSuggestions">
+            <div class="skeleton-user" *ngFor="let i of [1,2,3]"></div>
+          </div>
+          <div class="suggestions-list" *ngIf="!loadingSuggestions">
+            <div class="suggestion-item" *ngFor="let user of suggestions">
+              <a [routerLink]="['/user', user.username]" class="suggestion-user-link">
+                <img
+                  [src]="user.profilePicture || 'assets/default-avatar.png'"
+                  class="suggestion-avatar"
+                  [alt]="user.username"
+                  onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=s'"
+                />
+                <div class="suggestion-info">
+                  <span class="suggestion-name">{{ user.displayName || user.username }}</span>
+                  <span class="suggestion-handle">&#64;{{ user.username }}</span>
+                </div>
+              </a>
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="!followingSet.has(user.username)"
+                [class.btn-secondary]="followingSet.has(user.username)"
+                (click)="toggleFollow(user)"
+              >
+                {{ followingSet.has(user.username) ? 'Following' : 'Follow' }}
+              </button>
+            </div>
+            <p class="no-suggestions" *ngIf="suggestions.length === 0">No suggestions right now.</p>
+          </div>
+        </div>
+      </aside>
     </div>
   `,
   styles: [`
-    .community-page-container {
-      padding: 2.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2.5rem;
-      max-width: 1000px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .community-header {
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .coming-soon-pill {
-      background: rgba(199, 199, 204, 0.04);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      border-radius: 9999px;
-      padding: 0.25rem 0.85rem;
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      margin-bottom: 1.25rem;
-      box-shadow: var(--glow-silver-sm);
-    }
-
-    .coming-soon-title {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 0.75rem;
-      letter-spacing: -0.03em;
-    }
-
-    .coming-soon-title .highlight {
-      color: var(--text-primary);
-      text-shadow: 0 0 24px rgba(199, 199, 204, 0.2);
-    }
-
-    .subtitle {
-      font-size: 1rem;
-      color: var(--text-secondary);
-      max-width: 600px;
-      line-height: 1.6;
-    }
-
-    /* Grid layout */
-    .previews-grid {
+    .community-container {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.5rem;
+      grid-template-columns: 1fr 300px;
+      gap: 2rem;
+      padding: 2.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: start;
     }
 
-    .preview-card {
-      padding: 1.75rem;
+    .feed-column {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      text-align: left;
+      gap: 1.25rem;
     }
 
-    .preview-header-row {
+    .page-title h1 { font-size: 1.75rem; font-weight: 700; }
+    .subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+    /* Composer */
+    .composer-card { display: flex; flex-direction: column; gap: 1rem; }
+
+    .composer-top {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      gap: 0.875rem;
+      align-items: flex-start;
     }
 
-    .preview-icon {
+    .composer-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-hover);
+      object-fit: cover;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .composer-input {
+      flex: 1;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
       color: var(--text-primary);
-      display: inline-flex;
+      font-size: 0.9375rem;
+      resize: none;
+      transition: border-color 0.2s ease;
+      font-family: var(--font-sans);
+      line-height: 1.55;
+    }
+
+    .composer-input:focus {
+      outline: none;
+      border-color: var(--border-hover);
+    }
+
+    .composer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    .char-count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .char-count.over { color: var(--danger); }
+
+    /* Composer Attachments */
+    .composer-attachments {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: calc(36px + 0.875rem);
+      flex-wrap: wrap;
+      margin-top: -0.5rem;
+    }
+
+    .attachment-preview {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .attachment-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .remove-attachment-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      color: white;
+      display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease;
     }
 
-    .v2-tag {
-      font-size: 0.65rem;
-      font-weight: 600;
+    .remove-attachment-btn:hover {
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    .loading-attachment {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-hover);
+    }
+
+    .btn-icon-composer {
+      background: transparent;
+      border: none;
       color: var(--text-secondary);
-      border: 1px solid var(--border);
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.02);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: all 0.15s ease;
+      margin-right: auto;
     }
 
-    .preview-card h3 {
-      font-size: 1.25rem;
+    .btn-icon-composer:hover:not(:disabled) {
       color: var(--text-primary);
+      background: var(--surface-hover);
     }
 
-    .preview-card p {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
+    .btn-icon-composer:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
-    /* Interest/Subscribe card */
-    .interest-section {
-      text-align: center;
-      padding: 3rem 2rem;
+    .spinner-small {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--text-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Skeleton */
+    .skeleton-feed { display: flex; flex-direction: column; gap: 1rem; }
+    .skeleton-post { height: 180px; animation: shimmer 1.4s infinite; }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    .empty-feed {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1rem;
-      background: radial-gradient(circle at top, rgba(199, 199, 204, 0.04), transparent 80%);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
     }
 
-    .interest-section h3 {
-      font-size: 1.5rem;
-    }
+    .empty-feed svg { opacity: 0.4; }
 
-    .interest-section p {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      max-width: 500px;
-    }
+    /* Feed */
+    .feed-list { display: flex; flex-direction: column; gap: 1rem; }
 
-    .subscribe-form {
+    .post-card { display: flex; flex-direction: column; gap: 1rem; }
+
+    .post-header {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .post-author-link {
+      display: flex;
+      align-items: center;
       gap: 0.75rem;
-      width: 100%;
-      max-width: 460px;
-      margin-top: 0.5rem;
     }
 
-    .subscribe-form input {
-      flex: 1;
+    .post-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border-hover);
+      object-fit: cover;
     }
 
-    .subscribe-form button {
+    .post-author-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .post-display-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .post-username {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .post-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
       flex-shrink: 0;
     }
 
-    .success-msg {
+    .post-content {
+      font-size: 0.9375rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .post-images {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .post-image {
+      width: 100%;
+      max-height: 340px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 1.25rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
       font-size: 0.8125rem;
-      color: var(--success) !important;
-      margin-top: 0.25rem;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.35rem 0.5rem;
+      border-radius: var(--radius);
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+    }
+
+    .action-btn:hover { color: var(--text-primary); background: var(--surface-hover); }
+    .action-btn.active { color: var(--text-primary); }
+    .action-btn.active svg { fill: currentColor; }
+
+    /* Comments */
+    .comments-section {
+      border-top: 1px solid var(--border);
+      padding-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .comments-list { display: flex; flex-direction: column; gap: 0.625rem; }
+
+    .comment-item {
+      display: flex;
+      gap: 0.625rem;
+      align-items: flex-start;
+    }
+
+    .comment-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .comment-body { display: flex; flex-direction: column; gap: 0.15rem; }
+
+    .comment-author {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .delete-comment-btn {
+      padding: 0;
+      min-width: 20px;
+      min-height: 20px;
+      width: 20px;
+      height: 20px;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease;
+    }
+
+    .delete-comment-btn:hover {
+      color: var(--danger) !important;
+    }
+
+    .comment-text {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .comment-input-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .comment-input-row .input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    /* Suggestions sidebar */
+    .suggestions-column { position: sticky; top: 1.5rem; }
+
+    .suggestions-card { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .suggestions-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .skeleton-user {
+      height: 52px;
+      border-radius: var(--radius);
+      background: var(--surface-hover);
+      animation: shimmer 1.4s infinite;
+    }
+
+    .suggestions-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .suggestion-user-link {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .suggestion-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-hover);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .suggestion-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .suggestion-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .suggestion-handle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .no-suggestions { font-size: 0.875rem; color: var(--text-muted); }
+
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .community-container {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+      }
+      .suggestions-column { position: static; }
     }
 
     @media (max-width: 768px) {
-      .community-page-container {
+      .community-container {
         padding: 1.25rem 1rem;
         padding-bottom: calc(var(--mobile-nav-height) + 1.25rem);
-        gap: 1.5rem;
-      }
-
-      .coming-soon-title {
-        font-size: 1.85rem;
-      }
-
-      .subtitle {
-        font-size: 0.9rem;
-      }
-
-      .previews-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-
-      .interest-section {
-        padding: 2rem 1.25rem;
-      }
-
-      .interest-section h3 {
-        font-size: 1.25rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .community-page-container {
-        padding: 1rem 0.875rem;
-        padding-bottom: calc(var(--mobile-nav-height) + 1rem);
         gap: 1.25rem;
-      }
-
-      .coming-soon-title {
-        font-size: 1.5rem;
-      }
-
-      .coming-soon-pill {
-        font-size: 0.65rem;
-      }
-
-      .subtitle {
-        font-size: 0.875rem;
-      }
-
-      .preview-card {
-        padding: 1.25rem;
-        gap: 0.75rem;
-      }
-
-      .preview-card h3 {
-        font-size: 1.1rem;
-      }
-
-      .preview-card p {
-        font-size: 0.8125rem;
-      }
-
-      .interest-section {
-        padding: 1.75rem 1rem;
-        gap: 0.875rem;
-      }
-
-      .interest-section h3 {
-        font-size: 1.125rem;
-      }
-
-      .interest-section p {
-        font-size: 0.875rem;
-      }
-    }
-
-    @media (max-width: 360px) {
-      .community-page-container {
-        padding: 0.875rem 0.75rem;
-        padding-bottom: calc(var(--mobile-nav-height) + 0.875rem);
-      }
-
-      .coming-soon-title {
-        font-size: 1.375rem;
-      }
-
-      .preview-card {
-        padding: 1rem;
-      }
-
-      .interest-section {
-        padding: 1.5rem 0.875rem;
       }
     }
   `]
-
 })
 export class CommunityComponent implements OnInit {
-  public subscriberEmail = '';
-  public subscribed = false;
+  public authService = inject(AuthService);
+  private postService = inject(PostService);
+  private followService = inject(FollowService);
+  private uploadService = inject(UploadService);
 
-  public previewFeatures: FeaturePreview[] = [
-    {
-      title: 'Public Progress Sharing',
-      description: 'Host your commitment online. Share a personalized profile listing your recent activity grids, active streaks, and all-time records.',
-      icon: 'Team',
-      tag: 'V2 Preview'
-    },
-    {
-      title: 'Activity Feed',
-      description: 'Interact with peers and check up on mutual streaks. Receive clean updates when someone finishes milestones or commits code.',
-      icon: 'Activity',
-      tag: 'V2 Preview'
-    },
-    {
-      title: 'User Interactions',
-      description: 'Engage, support, and discuss tasks together. Write short encouraging comments or reactions directly on verified daily completed logs.',
-      icon: 'Chat',
-      tag: 'V2 Preview'
-    },
-    {
-      title: 'Achievement Sharing',
-      description: 'Generate beautiful high-resolution image snapshots of your consistency grid to export directly to Twitter/X, GitHub, or LinkedIn.',
-      icon: 'Achievements',
-      tag: 'V2 Preview'
-    }
-  ];
+  posts: Post[] = [];
+  suggestions: FollowUser[] = [];
+  commentMap: Record<string, Comment[]> = {};
+  commentDraft: Record<string, string> = {};
+  followingSet = new Set<string>();
+
+  newPostContent = '';
+  openCommentPostId: string | null = null;
+  isLoading = true;
+  isPosting = false;
+  loadingSuggestions = true;
+  
+  uploadedImages: string[] = [];
+  isUploadingImage = false;
+
+  public currentUserId = '';
 
   ngOnInit() {
-    // Component initialized
+    this.authService.currentUser$.subscribe(u => {
+      if (u) this.currentUserId = u._id;
+    });
+
+    this.postService.getFeed().subscribe({
+      next: (res) => { this.posts = res.posts || []; this.isLoading = false; },
+      error: () => { this.isLoading = false; }
+    });
+
+    this.followService.getSuggestions().subscribe({
+      next: (res) => { this.suggestions = res.users || []; this.loadingSuggestions = false; },
+      error: () => { this.loadingSuggestions = false; }
+    });
   }
 
-  public onSubscribe() {
-    if (!this.subscriberEmail || !this.subscriberEmail.includes('@')) return;
-    this.subscribed = true;
-    this.subscriberEmail = '';
-    setTimeout(() => {
-      this.subscribed = false;
-    }, 4000);
+  isLiked(post: Post): boolean { return post.likes && post.likes.includes(this.currentUserId); }
+  isSaved(post: Post): boolean { return post.saves && post.saves.includes(this.currentUserId); }
+
+  toggleLike(post: Post) {
+    if (!post.likes) post.likes = [];
+    this.postService.likePost(post._id).subscribe(res => {
+      if (res.liked) {
+        post.likes.push(this.currentUserId);
+      } else {
+        post.likes = post.likes.filter(id => id !== this.currentUserId);
+      }
+    });
+  }
+
+  toggleSave(post: Post) {
+    if (!post.saves) post.saves = [];
+    const currentlySaved = this.isSaved(post);
+    this.postService.toggleSavePost(post._id, currentlySaved).subscribe({
+      next: () => {
+        if (currentlySaved) {
+          post.saves = post.saves.filter(id => id !== this.currentUserId);
+        } else {
+          post.saves.push(this.currentUserId);
+        }
+      },
+      error: (err) => console.error('Save toggle failed:', err)
+    });
+  }
+
+  toggleComments(postId: string) {
+    if (this.openCommentPostId === postId) {
+      this.openCommentPostId = null;
+      return;
+    }
+    this.openCommentPostId = postId;
+    if (!this.commentMap[postId]) {
+      this.postService.getComments(postId).subscribe(res => {
+        this.commentMap[postId] = res.comments || [];
+      });
+    }
+  }
+
+  submitComment(post: Post) {
+    const content = this.commentDraft[post._id]?.trim();
+    if (!content) return;
+    this.postService.addComment(post._id, content).subscribe(res => {
+      if (!this.commentMap[post._id]) this.commentMap[post._id] = [];
+      this.commentMap[post._id].push(res.comment);
+      post.commentsCount = (post.commentsCount || 0) + 1;
+      this.commentDraft[post._id] = '';
+    });
+  }
+
+  deleteComment(post: Post, commentId: string) {
+    if (confirm('Are you sure you want to delete this comment?')) {
+      this.postService.deleteComment(commentId).subscribe({
+        next: () => {
+          if (this.commentMap[post._id]) {
+            this.commentMap[post._id] = this.commentMap[post._id].filter(c => c._id !== commentId);
+          }
+          post.commentsCount = Math.max(0, (post.commentsCount || 0) - 1);
+        },
+        error: (err) => console.error('Failed to delete comment:', err)
+      });
+    }
+  }
+
+  onFileSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      this.isUploadingImage = true;
+      this.uploadService.uploadImage(file).subscribe({
+        next: (res) => {
+          this.isUploadingImage = false;
+          if (res.success && res.imageUrl) {
+            this.uploadedImages.push(res.imageUrl);
+          }
+        },
+        error: () => {
+          this.isUploadingImage = false;
+        }
+      });
+    }
+  }
+
+  removeAttachment(index: number) {
+    this.uploadedImages.splice(index, 1);
+  }
+
+  submitPost() {
+    if ((!this.newPostContent.trim() && this.uploadedImages.length === 0) || this.isPosting) return;
+    this.isPosting = true;
+    this.postService.createPost(this.newPostContent.trim(), this.uploadedImages).subscribe({
+      next: (res) => {
+        this.posts.unshift(res.post);
+        this.newPostContent = '';
+        this.uploadedImages = [];
+        this.isPosting = false;
+      },
+      error: () => { this.isPosting = false; }
+    });
+  }
+
+  toggleFollow(user: FollowUser) {
+    if (this.followingSet.has(user.username)) {
+      this.followService.unfollow(user.username).subscribe();
+      this.followingSet.delete(user.username);
+    } else {
+      this.followService.follow(user.username).subscribe();
+      this.followingSet.add(user.username);
+    }
+  }
+
+  getRelativeTime(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return days < 7 ? `${days}d ago` : new Date(dateStr).toLocaleDateString();
   }
 }

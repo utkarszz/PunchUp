@@ -8,6 +8,9 @@ export interface UserProfileStats {
   currentStreak: number;
   longestStreak: number;
   totalTasksCompleted: number;
+  posts: number;
+  followers: number;
+  following: number;
 }
 
 export interface PublicProfile {
@@ -22,8 +25,16 @@ export class UserService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/api/users`;
 
-  public updateProfile(username: string, bio: string): Observable<{ success: boolean; user: UserProfile }> {
-    return this.http.put<{ success: boolean; user: UserProfile }>(`${this.baseUrl}/me`, { username, bio });
+  public updateProfile(username: string, bio: string, displayName?: string, profilePicture?: string | null, isOnboarded?: boolean): Observable<{ success: boolean; user: UserProfile }> {
+    return this.http.put<{ success: boolean; user: UserProfile }>(`${this.baseUrl}/me`, { username, bio, displayName, profilePicture, isOnboarded });
+  }
+
+  public checkUsername(username: string): Observable<{ success: boolean; available: boolean }> {
+    return this.http.get<{ success: boolean; available: boolean }>(`${this.baseUrl}/check-username/${username}`);
+  }
+
+  public deleteAccount(): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/me`);
   }
 
   public getUserProfile(id: string): Observable<{ success: boolean; profile: PublicProfile }> {

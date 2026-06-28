@@ -3,6 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
+interface GridCell {
+  lit: boolean;
+  pulse: boolean;
+  dim: boolean;
+}
+
 @Component({
   selector: 'app-landing',
   standalone: true,
@@ -12,73 +18,112 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   public authService = inject(AuthService);
-  public mockGrid: { intensity: number; date: string; tasks: number }[] = [];
-  public heroGrid: { intensity: number; active: boolean }[] = [];
-  public streakCount = 0;
-  private streakTarget = 100;
-  private streakInterval: any;
+
+  // Grid state
+  public gridCells: GridCell[] = [];
+  public monthHeaders: { name: string; colIndex: number }[] = [];
+
+  // Animation state
+  public gridFilling = false;
+  public gridFull = false;
+  public filledCount = 0;
+  public totalCells = 98; // 14 cols × 7 rows
+  public get fillPercent(): number {
+    return Math.round((this.filledCount / this.totalCells) * 100);
+  }
+
+  private fillTimer: any;
+  private resetTimer: any;
   private scrollInterval: any;
   private observer: IntersectionObserver | null = null;
 
   ngOnInit() {
-    this.generateMockGrid();
-    this.generateHeroGrid();
-    this.animateStreak();
+    this.buildEmptyGrid();
+    this.buildMonthHeaders();
   }
 
   ngAfterViewInit() {
     this.initScrollReveal();
     this.initAutoScroll();
-    this.animateHeroGrid();
+    // Small delay then start the animation loop
+    setTimeout(() => this.startFillAnimation(), 600);
   }
 
   ngOnDestroy() {
-    clearInterval(this.streakInterval);
+    clearTimeout(this.fillTimer);
+    clearTimeout(this.resetTimer);
     clearInterval(this.scrollInterval);
     this.observer?.disconnect();
   }
 
-  private generateMockGrid() {
-    const pattern = [0, 0, 1, 0, 2, 1, 0, 3, 0, 2, 1, 0, 0, 2, 3, 1, 0, 1, 2, 0];
-    for (let i = 0; i < 140; i++) {
-      const intensity = pattern[i % pattern.length];
-      this.mockGrid.push({
-        intensity,
-        date: '2026-06-' + ((i % 30) + 1),
-        tasks: [0, 1, 4, 8][intensity]
-      });
-    }
+  // ── Grid Setup ────────────────────────────────────────────────────────────
+
+  private buildEmptyGrid() {
+    this.gridCells = Array.from({ length: this.totalCells }, () => ({
+      lit: false,
+      pulse: false,
+      dim: false
+    }));
   }
 
-  private generateHeroGrid() {
-    for (let i = 0; i < 84; i++) {
-      this.heroGrid.push({ intensity: 0, active: false });
-    }
-  }
-
-  private animateHeroGrid() {
-    const pattern = [0, 0, 1, 2, 1, 0, 3, 2, 1, 0, 0, 1, 2, 3, 1, 0, 1, 0, 2, 1, 3, 0, 1, 2, 0, 1, 0, 2, 1, 3, 1, 0, 2, 1, 0, 3, 2, 1, 0, 1, 2, 0, 1, 2, 3, 1, 0, 1, 0, 2, 1, 0, 3, 1, 2, 0, 1, 2, 3, 1, 0, 1, 2, 0, 1, 3, 0, 2, 1, 0, 1, 2, 3, 1, 0, 2, 1, 3, 0, 1, 2, 0, 3, 1];
-    let idx = 0;
-    const reveal = () => {
-      if (idx < this.heroGrid.length) {
-        this.heroGrid[idx].intensity = pattern[idx] ?? 0;
-        this.heroGrid[idx].active = true;
-        idx++;
-        setTimeout(reveal, 18);
+  private buildMonthHeaders() {
+    const today = new Date();
+    let lastMonth = '';
+    for (let col = 0; col < 14; col++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - ((13 - col) * 7));
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      if (month !== lastMonth) {
+        this.monthHeaders.push({ name: month, colIndex: col });
+        lastMonth = month;
       }
-    };
-    setTimeout(reveal, 400);
+    }
   }
 
-  private animateStreak() {
-    let current = 1;
-    this.streakCount = current;
-    this.streakInterval = setInterval(() => {
-      current += 1;
-      this.streakCount = current;
-      if (current >= this.streakTarget) clearInterval(this.streakInterval);
-    }, 28);
+  // ── Fill Animation ────────────────────────────────────────────────────────
+
+  private startFillAnimation() {
+    // Reset to completely empty
+    this.gridFilling = false;
+    this.gridFull = false;
+    this.filledCount = 0;
+    this.gridCells.forEach(c => { c.lit = false; c.pulse = false; c.dim = false; });
+
+    // Small pause in empty state so user can read the message
+    this.fillTimer = setTimeout(() => this.fillNext(0), 900);
   }
+
+  private fillNext(index: number) {
+    if (index >= this.totalCells) {
+      // Grid is full
+      this.gridFilling = false;
+      this.gridFull = true;
+      // After 2.5 s pause on "full" state, reset and loop
+      this.resetTimer = setTimeout(() => this.startFillAnimation(), 2500);
+      return;
+    }
+
+    this.gridFilling = true;
+    const cell = this.gridCells[index];
+    cell.lit = true;
+    cell.pulse = true;
+    this.filledCount = index + 1;
+
+    // Remove pulse after its CSS animation completes
+    setTimeout(() => { cell.pulse = false; }, 380);
+
+    // Speed: starts slow (60ms), accelerates as grid fills, settles fast near end
+    const progress = index / this.totalCells;
+    const delay = progress < 0.15
+      ? 55                                     // slow at the start — feels intentional
+      : progress < 0.85
+        ? Math.max(18, 55 - progress * 50)    // smooth ramp-up
+        : 14;                                  // fast sprint to the finish
+
+    this.fillTimer = setTimeout(() => this.fillNext(index + 1), delay);
+  }
+
+  // ── Scroll / Reveal ───────────────────────────────────────────────────────
 
   private initScrollReveal() {
     this.observer = new IntersectionObserver((entries) => {
@@ -115,3 +160,4 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.authService.loginWithGoogle();
   }
 }
+

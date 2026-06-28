@@ -15,75 +15,119 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
   imports: [CommonModule, RouterLink],
   template: `
     <div class="dashboard-container animate-fade-in">
-      <!-- Welcome Header -->
-      <header class="dashboard-header animate-slide-up" *ngIf="authService.currentUser$ | async as user">
-        <div>
-          <h1>Welcome back, {{ user.username }}</h1>
-          <p class="subtitle">Here is your consistency overview for today.</p>
-        </div>
-        <div class="header-badge btn btn-secondary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-          <span>Streak: {{ streakData?.currentStreak || 0 }} days</span>
-        </div>
-      </header>
-
-      <!-- Stats Grid -->
-      <section class="stats-row animate-slide-up animate-stagger-1">
-        <!-- Card 1: Streak -->
-        <div class="card stat-card">
-          <span class="stat-label">Current Streak</span>
-          <div class="stat-value-container">
-            <span class="stat-value">{{ streakData?.currentStreak || 0 }}</span>
-            <span class="stat-unit">days</span>
+      
+      <!-- Top Welcome & Stats Card -->
+      <section class="card welcome-card animate-slide-up" *ngIf="authService.currentUser$ | async as user">
+        <div class="welcome-header">
+          <div class="welcome-text">
+            <h1>Welcome back, {{ user.displayName || user.username }}</h1>
+            <p class="subtitle">Here is your consistency overview for today. Keep the streak alive!</p>
           </div>
-          <p class="stat-comparison">Longest: {{ streakData?.longestStreak || 0 }} days</p>
-        </div>
-
-        <!-- Card 2: Completion Rate -->
-        <div class="card stat-card">
-          <span class="stat-label">Completion Rate</span>
-          <div class="stat-value-container">
-            <span class="stat-value">{{ analyticsData?.completionRate || 0 }}</span>
-            <span class="stat-unit">%</span>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" [style.width.%]="analyticsData?.completionRate || 0"></div>
+          <div class="welcome-avatar-wrapper">
+            <img 
+              [src]="user.profilePicture || 'assets/default-avatar.png'" 
+              class="welcome-avatar" 
+              alt="Avatar"
+              onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=user'"
+            />
           </div>
         </div>
 
-        <!-- Card 3: Tasks Completed -->
-        <div class="card stat-card">
-          <span class="stat-label">Tasks Completed</span>
-          <div class="stat-value-container">
-            <span class="stat-value">{{ analyticsData?.completedTasks || 0 }}</span>
-            <span class="stat-unit">/ {{ analyticsData?.totalTasks || 0 }}</span>
+        <div class="dashboard-stats-grid">
+          <div class="dashboard-stat-item">
+            <span class="stat-num">{{ streakData?.currentStreak || 0 }}</span>
+            <span class="stat-label">Current Streak</span>
+            <span class="stat-subtext">days active</span>
           </div>
-          <p class="stat-comparison">{{ analyticsData?.pendingTasks || 0 }} pending tasks</p>
+          <div class="stat-divider"></div>
+          <div class="dashboard-stat-item">
+            <span class="stat-num">{{ streakData?.longestStreak || 0 }}</span>
+            <span class="stat-label">Longest Streak</span>
+            <span class="stat-subtext">personal best</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="dashboard-stat-item">
+            <span class="stat-num">{{ analyticsData?.completedTasks || 0 }}</span>
+            <span class="stat-label">Total Tasks Done</span>
+            <span class="stat-subtext">completed lifetime</span>
+          </div>
         </div>
       </section>
 
-      <!-- Main Layout Grid -->
-      <div class="dashboard-grid-layout animate-slide-up animate-stagger-2">
-        <!-- Recent Tasks Checklist -->
-        <div class="card checklist-card">
-          <div class="card-title-row">
-            <h3>Recent Tasks</h3>
+      <!-- Middle Quick Actions Section -->
+      <section class="quick-actions-section animate-slide-up animate-stagger-1">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="quick-actions-grid">
+          
+          <a routerLink="/tasks" [queryParams]="{ create: 'true' }" class="card action-card">
+            <div class="action-icon-wrapper circle-blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+            <div class="action-card-content">
+              <h3>Create Task</h3>
+              <p>Add a new daily consistency target to your workspace.</p>
+            </div>
+          </a>
+
+          <a routerLink="/analytics" class="card action-card">
+            <div class="action-icon-wrapper circle-purple">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+            </div>
+            <div class="action-card-content">
+              <h3>View Analytics</h3>
+              <p>Observe habit completion rates and detailed history.</p>
+            </div>
+          </a>
+
+          <a routerLink="/community" class="card action-card">
+            <div class="action-icon-wrapper circle-green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="action-card-content">
+              <h3>Community Feed</h3>
+              <p>Share achievements, follow users, and grow together.</p>
+            </div>
+          </a>
+
+        </div>
+      </section>
+
+      <!-- Bottom Today's Tasks & Grid Preview -->
+      <div class="dashboard-bottom-grid animate-slide-up animate-stagger-2">
+        
+        <!-- Today's Tasks List -->
+        <section class="card tasks-list-card">
+          <div class="card-header-row">
+            <h3>Today's Tasks</h3>
             <a routerLink="/tasks" class="btn btn-secondary btn-sm">Manage Tasks</a>
           </div>
           
-          <div class="tasks-list" *ngIf="recentTasks.length > 0; else noTasks">
-            <div *ngFor="let task of recentTasks" class="task-item" [class.completed]="task.completed">
+          <div class="tasks-list" *ngIf="todayTasks.length > 0; else noTasks">
+            <div *ngFor="let task of todayTasks" class="task-item" [class.completed]="task.completed">
               <label class="checkbox-container">
                 <input 
                   type="checkbox" 
                   [checked]="task.completed"
                   [disabled]="task.completed"
-                  (change)="onToggleComplete(task)" />
+                  (change)="onToggleComplete(task)" 
+                />
                 <span class="checkmark"></span>
               </label>
               <div class="task-details">
                 <span class="task-title">{{ task.title }}</span>
-                <span class="task-category-badge">{{ task.category }}</span>
+                <span class="task-category-badge" *ngIf="task.category">{{ task.category }}</span>
               </div>
               <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
             </div>
@@ -91,17 +135,21 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
           
           <ng-template #noTasks>
             <div class="empty-state">
-              <p>No pending tasks found. Create one to get started!</p>
-              <a routerLink="/tasks" class="btn btn-primary btn-sm">Create Task</a>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              <p>No tasks due today. Create one or rest up!</p>
+              <a routerLink="/tasks" [queryParams]="{ create: 'true' }" class="btn btn-primary btn-sm">Create Task</a>
             </div>
           </ng-template>
-        </div>
+        </section>
 
-        <!-- Consistency Grid Preview (12 Weeks) -->
-        <div class="card grid-preview-card">
-          <div class="card-title-row">
+        <!-- Mini Grid Preview Card -->
+        <section class="card mini-grid-card">
+          <div class="card-header-row">
             <h3>Consistency Preview</h3>
-            <a routerLink="/grid" class="btn btn-secondary btn-sm">Full Grid</a>
+            <a routerLink="/grid" class="btn btn-secondary btn-sm">Full Heatmap</a>
           </div>
           <p class="grid-desc">Showing daily completions for the last 12 weeks.</p>
           
@@ -128,8 +176,10 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
             <div class="mini-cell intensity-3"></div>
             <span>More</span>
           </div>
-        </div>
+        </section>
+
       </div>
+
     </div>
   `,
   styles: [`
@@ -137,125 +187,183 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       padding: 2.5rem;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 2.5rem;
       max-width: 1200px;
       margin: 0 auto;
       width: 100%;
     }
 
-    .dashboard-header {
+    /* Welcome Card */
+    .welcome-card {
+      padding: 2.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .welcome-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 1.5rem;
+    }
+
+    .welcome-text h1 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--text-primary);
     }
 
     .subtitle {
-      font-size: 0.9rem;
+      font-size: 0.9375rem;
       color: var(--text-secondary);
-      margin-top: 0.25rem;
+      margin-top: 0.35rem;
     }
 
-    .header-badge {
+    .welcome-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--border-hover);
+      object-fit: cover;
+    }
+
+    .dashboard-stats-grid {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      border-color: var(--border-hover);
+      border-top: 1px solid var(--border);
+      padding-top: 1.75rem;
     }
 
-    /* Stats Cards Row */
-    .stats-row {
+    .dashboard-stat-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.25rem;
+    }
+
+    .stat-num {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .stat-subtext {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 48px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Quick Actions */
+    .quick-actions-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .quick-actions-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 1.5rem;
     }
 
-    .stat-card {
+    .action-card {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
       padding: 1.5rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .action-card:hover {
+      border-color: var(--border-glow);
+      background: var(--surface-elevated);
+    }
+
+    .action-icon-wrapper {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .circle-blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .circle-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    .circle-green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+
+    .action-card-content {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.25rem;
+      text-align: left;
     }
 
-    .stat-label {
-      font-size: 0.75rem;
+    .action-card-content h3 {
+      font-size: 0.9375rem;
       font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .stat-value-container {
-      display: flex;
-      align-items: baseline;
-      gap: 0.35rem;
-    }
-
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      font-family: var(--font-display);
       color: var(--text-primary);
     }
 
-    .stat-unit {
-      font-size: 0.875rem;
+    .action-card-content p {
+      font-size: 0.8125rem;
       color: var(--text-secondary);
-      font-weight: 500;
+      line-height: 1.4;
     }
 
-    .stat-comparison {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-
-    .progress-bar-container {
-      width: 100%;
-      height: 4px;
-      background: var(--surface-hover);
-      border-radius: 2px;
-      margin-top: auto;
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      transition: width 0.5s ease;
-    }
-
-    /* Layout Grid */
-    .dashboard-grid-layout {
+    /* Bottom Layout */
+    .dashboard-bottom-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.2fr 1fr;
       gap: 1.5rem;
     }
 
-    .card-title-row {
+    .card-header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
     }
 
-    .btn-sm {
-      padding: 0.35rem 0.7rem;
-      font-size: 0.75rem;
+    .card-header-row h3 {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      color: var(--text-primary);
     }
 
-    /* Checklist Card */
-    .checklist-card {
-      display: flex;
-      flex-direction: column;
-    }
-
+    /* Checklist */
     .tasks-list {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      margin-top: 0.5rem;
     }
 
     .task-item {
@@ -373,12 +481,9 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       font-size: 0.875rem;
     }
 
-    /* Grid Preview Card */
-    .grid-preview-card {
-      display: flex;
-      flex-direction: column;
-    }
+    .empty-state svg { opacity: 0.4; }
 
+    /* Heatmap Mini Grid */
     .grid-desc {
       font-size: 0.8125rem;
       color: var(--text-secondary);
@@ -434,14 +539,10 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       color: var(--text-muted);
     }
 
-    /* Responsiveness */
+    /* Responsive */
     @media (max-width: 1024px) {
-      .dashboard-grid-layout {
+      .dashboard-bottom-grid {
         grid-template-columns: 1fr;
-      }
-
-      .stats-row {
-        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -449,141 +550,25 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       .dashboard-container {
         padding: 1.25rem 1rem;
         padding-bottom: calc(var(--mobile-nav-height) + 1.25rem);
-        gap: 1.25rem;
+        gap: 1.5rem;
       }
 
-      .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-
-      .dashboard-header h1 {
-        font-size: 1.4rem;
-      }
-
-      .header-badge {
-        align-self: flex-start;
-      }
-
-      .stats-row {
+      .quick-actions-grid {
         grid-template-columns: 1fr;
-        gap: 0.75rem;
-      }
-
-      .stat-card {
-        padding: 1.25rem;
-        flex-direction: row;
-        align-items: center;
         gap: 1rem;
       }
 
-      .stat-value-container {
-        flex-direction: row;
-        align-items: baseline;
-      }
-
-      .stat-value {
-        font-size: 1.75rem;
-      }
-
-      .dashboard-grid-layout {
-        grid-template-columns: 1fr;
-        gap: 0.875rem;
-      }
-
-      .card-title-row h3 {
-        font-size: 0.95rem;
-      }
-
-      .task-item {
-        padding: 0.75rem;
-        gap: 0.75rem;
-      }
-
-      .mini-grid-container {
-        padding: 1rem 0.75rem;
-        overflow-x: auto;
-      }
-
-      .mini-cell {
-        width: 9px;
-        height: 9px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .dashboard-container {
-        padding: 1rem 0.875rem;
-        padding-bottom: calc(var(--mobile-nav-height) + 1rem);
+      .dashboard-stats-grid {
+        flex-wrap: wrap;
         gap: 1rem;
       }
 
-      .dashboard-header h1 {
-        font-size: 1.25rem;
-      }
-
-      .subtitle {
-        font-size: 0.8125rem;
-      }
-
-      .stats-row {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.625rem;
-      }
-
-      .stat-card {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 1rem;
-        gap: 0.375rem;
-      }
-
-      .stat-value {
-        font-size: 1.5rem;
-      }
-
-      .task-item {
-        padding: 0.625rem 0.75rem;
-      }
-
-      .task-title {
-        font-size: 0.8125rem;
-      }
-
-      .mini-cell {
-        width: 8px;
-        height: 8px;
-      }
-    }
-
-    @media (max-width: 360px) {
-      .dashboard-container {
-        padding: 0.875rem 0.75rem;
-        padding-bottom: calc(var(--mobile-nav-height) + 0.875rem);
-      }
-
-      .dashboard-header h1 {
-        font-size: 1.125rem;
-      }
-
-      .stats-row {
-        grid-template-columns: 1fr;
-      }
-
-      .stat-card {
-        flex-direction: row;
-        align-items: center;
-        padding: 0.875rem;
-      }
-
-      .mini-cell {
-        width: 7px;
-        height: 7px;
-      }
+      .stat-divider { display: none; }
+      .dashboard-stat-item { flex: 0 0 45%; }
+      
+      .welcome-card { padding: 1.5rem; }
     }
   `]
-
 })
 export class DashboardComponent implements OnInit {
   public authService = inject(AuthService);
@@ -592,90 +577,58 @@ export class DashboardComponent implements OnInit {
   private gridService = inject(GridService);
   private analyticsService = inject(AnalyticsService);
 
-  public streakData: StreakData | null = null;
-  public analyticsData: AnalyticsData | null = null;
-  public recentTasks: Task[] = [];
-  public miniGridCells: GridCell[] = [];
+  streakData: StreakData | null = null;
+  analyticsData: AnalyticsData | null = null;
+  todayTasks: Task[] = [];
+  miniGridCells: GridCell[] = [];
 
   ngOnInit() {
-    this.loadDashboardData();
+    this.loadData();
   }
 
-  private loadDashboardData() {
+  private loadData() {
     forkJoin({
-      streak: this.streakService.getStreak().pipe(catchError(() => of({ success: true, streak: null }))),
-      tasks: this.taskService.getTasks().pipe(catchError(() => of({ success: true, count: 0, tasks: [] }))),
-      grid: this.gridService.getGridData().pipe(catchError(() => of({ success: true, totalContributionDays: 0, gridData: [] }))),
-      analytics: this.analyticsService.getAnalytics().pipe(catchError(() => of({ success: true, analytics: null })))
-    }).subscribe(({ streak, tasks, grid, analytics }) => {
-      if (streak.success && streak.streak) {
-        this.streakData = streak.streak;
-      }
-      
-      if (analytics.success && analytics.analytics) {
-        this.analyticsData = analytics.analytics;
-      }
-
-      if (tasks.success && tasks.tasks) {
-        // Filter out completed tasks and take top 4 pending tasks, sort by priority
-        const pending = tasks.tasks.filter(t => !t.completed);
-        const completed = tasks.tasks.filter(t => t.completed);
-        
-        // Show up to 4 items: priority to pending tasks
-        this.recentTasks = [...pending, ...completed].slice(0, 4);
-      }
-
-      if (grid.success && grid.gridData) {
-        this.generateMiniGrid(grid.gridData);
-      } else {
-        this.generateMiniGrid([]);
+      streak: this.streakService.getStreak().pipe(catchError(() => of(null))),
+      analytics: this.analyticsService.getAnalytics().pipe(catchError(() => of(null))),
+      tasks: this.taskService.getTasks().pipe(catchError(() => of(null))),
+      grid: this.gridService.getGridData().pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: (res: any) => {
+        if (res.streak && res.streak.success) {
+          this.streakData = res.streak.streak;
+        }
+        if (res.analytics && res.analytics.success) {
+          this.analyticsData = res.analytics.analytics;
+        }
+        if (res.tasks && res.tasks.success) {
+          const allTasks: Task[] = res.tasks.tasks || [];
+          // Filter tasks due today
+          const todayStr = new Date().toDateString();
+          this.todayTasks = allTasks.filter(t => {
+            if (t.completed) return false; // Only show pending
+            if (!t.dueDate) return true; // Show anytime tasks
+            return new Date(t.dueDate).toDateString() === todayStr;
+          });
+        }
+        if (res.grid && res.grid.success) {
+          // Display last 12 weeks of cells
+          const allCells = res.grid.cells || [];
+          this.miniGridCells = allCells.slice(-84);
+        }
       }
     });
-  }
-
-  private generateMiniGrid(actualData: GridCell[]) {
-    // We want 12 weeks = 84 cells.
-    // Let's create an array representing the last 84 days.
-    const cells: GridCell[] = [];
-    const today = new Date();
-    const dataMap = new Map<string, GridCell>();
-    
-    actualData.forEach(c => dataMap.set(c.date, c));
-
-    for (let i = 83; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      
-      if (dataMap.has(dateStr)) {
-        cells.push(dataMap.get(dateStr)!);
-      } else {
-        cells.push({
-          date: dateStr,
-          tasksCompleted: 0,
-          intensity: 0
-        });
-      }
-    }
-
-    this.miniGridCells = cells;
   }
 
   onToggleComplete(task: Task) {
     if (task.completed) return;
-    
-    this.taskService.completeTask(task._id).subscribe(response => {
-      if (response.success) {
-        task.completed = true;
-        task.completedAt = response.task.completedAt;
-        
-        // Reload dashboard stats
-        this.loadDashboardData();
+    this.taskService.completeTask(task._id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          task.completed = true;
+          // Reload dashboard statistics and grid
+          this.loadData();
+        }
       }
     });
-  }
-
-  encodeURIComponent(val: string): string {
-    return encodeURIComponent(val || 'user');
   }
 }

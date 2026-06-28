@@ -15,8 +15,18 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/public-profile/public-profile.component').then(m => m.PublicProfileComponent)
   },
   {
+    path: 'user/:id/network',
+    loadComponent: () => import('./pages/network/network.component').then(m => m.NetworkComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'auth/callback',
     loadComponent: () => import('./pages/auth-callback/auth-callback.component').then(m => m.AuthCallbackComponent)
+  },
+  {
+    path: 'onboarding',
+    loadComponent: () => import('./pages/onboarding/onboarding.component').then(m => m.OnboardingComponent),
+    canActivate: [authGuard]
   },
   {
     path: 'dashboard',
@@ -46,6 +56,11 @@ export const routes: Routes = [
   {
     path: 'community',
     loadComponent: () => import('./pages/community/community.component').then(m => m.CommunityComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'notifications',
+    loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent),
     canActivate: [authGuard]
   },
   {

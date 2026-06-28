@@ -3,6 +3,9 @@ const Streak = require("../models/Streak");
 const Task = require("../models/Task");
 const Post = require("../models/Post");
 const Follow = require("../models/Follow");
+const Comment = require("../models/Comment");
+const SavedPost = require("../models/SavedPost");
+const Notification = require("../models/Notification");
 
 const migrateUsernames = require("../utils/migrateUsernames");
 
@@ -58,7 +61,7 @@ const getMyProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { displayName, username, bio } = req.body;
+    const { displayName, username, bio, profilePicture, isOnboarded } = req.body;
 
     const user = await User.findById(req.user._id);
 
@@ -105,6 +108,14 @@ const updateProfile = async (req, res) => {
       user.bio = bio;
     }
 
+    if (profilePicture !== undefined) {
+      user.profilePicture = profilePicture;
+    }
+
+    if (isOnboarded !== undefined) {
+      user.isOnboarded = isOnboarded;
+    }
+
     await user.save();
 
     res.status(200).json({
@@ -114,6 +125,41 @@ const updateProfile = async (req, res) => {
   } catch (error) {
     console.error("updateProfile Error:", error);
 
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // 1. Delete user from User collection
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 2. Cascade delete all user records
+    await Streak.deleteMany({ user: userId });
+    await Task.deleteMany({ user: userId });
+    await Post.deleteMany({ user: userId });
+    await Comment.deleteMany({ user: userId });
+    await SavedPost.deleteMany({ user: userId });
+    await Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] });
+    await Notification.deleteMany({ $or: [{ recipient: userId }, { sender: userId }] });
+
+    res.status(200).json({
+      success: true,
+      message: "Account permanently deleted",
+    });
+  } catch (error) {
+    console.error("deleteAccount Error:", error);
     res.status(500).json({
       success: false,
       message: error.message,
@@ -253,7 +299,7 @@ const getSuggestions = async (req, res) => {
     followedIds.push(req.user._id);
 
     const suggestions = await User.find({
-      id: {
+      _id: {
         $nin: followedIds,
       },
     })
@@ -281,4 +327,5 @@ module.exports = {
   getSuggestions,
   runMigration,
   checkUsername,
+  deleteAccount,
 };

@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ThemeService } from '../../../core/services/theme.service';
 
 interface NavItem {
   label: string;
@@ -16,9 +17,9 @@ interface NavItem {
   template: `
     <aside [ngClass]="{ 'collapsed': isCollapsed }" class="sidebar">
       <div class="sidebar-header">
-        <div class="logo-container">
+        <div class="logo-container" routerLink="/" style="cursor: pointer;">
           <img src="assets/logo.png" alt="PunchUp" class="logo-img" />
-          <span class="logo-text" *ngIf="!isCollapsed">PunchUp <span class="logo-v1">V1</span></span>
+          <span class="logo-text" *ngIf="!isCollapsed">PunchUp <span class="logo-v1">V2</span></span>
         </div>
         <button (click)="toggleSidebar()" class="btn-icon toggle-btn" aria-label="Toggle Sidebar">
           <svg *ngIf="!isCollapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
@@ -39,6 +40,15 @@ interface NavItem {
       </nav>
 
       <div class="sidebar-footer" *ngIf="authService.currentUser$ | async as user">
+        <!-- Theme Toggle -->
+        <button (click)="toggleTheme()" class="nav-item theme-btn" [title]="isCollapsed ? 'Toggle Theme' : ''">
+          <span class="nav-icon">
+            <svg *ngIf="themeService.isDarkMode$ | async" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <svg *ngIf="!(themeService.isDarkMode$ | async)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </span>
+          <span class="nav-label" *ngIf="!isCollapsed">Theme</span>
+        </button>
+
         <div class="user-badge" [routerLink]="['/profile']">
           <img [src]="user.profilePicture || 'assets/default-avatar.png'"
                onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(this.title)"
@@ -259,6 +269,24 @@ interface NavItem {
       border-color: rgba(239, 68, 68, 0.15);
     }
 
+    /* Tablet collapse logic */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .sidebar {
+        width: var(--sidebar-width-collapsed) !important;
+      }
+      .sidebar .logo-text,
+      .sidebar .nav-label,
+      .sidebar .user-info {
+        display: none !important;
+      }
+      .sidebar-header {
+        justify-content: center;
+      }
+      .sidebar-header .toggle-btn {
+        display: none;
+      }
+    }
+
     /* Hide sidebar on mobile */
     @media (max-width: 768px) {
       .sidebar {
@@ -269,6 +297,7 @@ interface NavItem {
 })
 export class SidebarComponent implements OnInit {
   public authService = inject(AuthService);
+  public themeService = inject(ThemeService);
   private router = inject(Router);
 
   public isCollapsed = false;
@@ -295,14 +324,19 @@ export class SidebarComponent implements OnInit {
       iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>`
     },
     {
-      label: 'Profile',
-      route: '/profile',
-      iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+      label: 'Notifications',
+      route: '/notifications',
+      iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`
     },
     {
       label: 'Community',
       route: '/community',
       iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`
+    },
+    {
+      label: 'Profile',
+      route: '/profile',
+      iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
     }
   ];
 
@@ -314,6 +348,10 @@ export class SidebarComponent implements OnInit {
   toggleSidebar() {
     this.isCollapsed = !this.isCollapsed;
     localStorage.setItem('sidebar_collapsed', String(this.isCollapsed));
+  }
+
+  toggleTheme() {
+    this.themeService.toggleTheme();
   }
 
   onLogout() {

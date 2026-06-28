@@ -1,11 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 import { CommandPaletteComponent } from './shared/components/command-palette/command-palette.component';
 import { AuthService } from './core/services/auth.service';
 import { BackendWakeupService } from './core/services/backend-wakeup.service';
 import { ToastComponent } from './shared/components/toast/toast.component';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -17,11 +18,27 @@ import { ToastComponent } from './shared/components/toast/toast.component';
 export class AppComponent implements OnInit {
   private authService = inject(AuthService);
   public wakeupService = inject(BackendWakeupService);
+  public themeService = inject(ThemeService);
+  private router = inject(Router);
+  public isDarkMode$ = this.themeService.isDarkMode$;
+
+  public toggleTheme() { this.themeService.toggleTheme(); }
   public isAuthenticated = false;
+
+  public get showNavigation(): boolean {
+    const user = this.authService.currentUserValue;
+    return this.isAuthenticated && user?.isOnboarded !== false;
+  }
 
   ngOnInit() {
     this.authService.currentUser$.subscribe(user => {
       this.isAuthenticated = !!user;
+      if (user && user.isOnboarded === false) {
+        const currentUrl = this.router.url.split('?')[0];
+        if (currentUrl !== '/onboarding' && currentUrl !== '/login') {
+          this.router.navigate(['/onboarding']);
+        }
+      }
     });
 
     if (typeof window === 'undefined') return;

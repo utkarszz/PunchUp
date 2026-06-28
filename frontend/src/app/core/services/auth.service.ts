@@ -10,8 +10,10 @@ export interface UserProfile {
   _id: string;
   username: string;
   email: string;
+  displayName?: string;
   profilePicture?: string;
   bio?: string;
+  isOnboarded?: boolean;
 }
 
 @Injectable({
@@ -28,6 +30,10 @@ export class AuthService {
   
   private isLoadedSubject = new BehaviorSubject<boolean>(false);
   public isLoaded$ = this.isLoadedSubject.asObservable();
+
+  public get currentUserValue(): UserProfile | null {
+    return this.currentUserSubject.value;
+  }
 
   constructor() {
     this.wakeupService.isReady$.pipe(
@@ -55,8 +61,12 @@ export class AuthService {
     
     localStorage.setItem('token', token);
     return this.loadCurrentUser().pipe(
-      tap(() => {
-        this.router.navigate(['/']); // Redirect to landing page instead of dashboard
+      tap((user) => {
+        if (user && user.isOnboarded === false) {
+          this.router.navigate(['/onboarding']);
+        } else {
+          this.router.navigate(['/']); // Redirect to landing page instead of dashboard
+        }
       })
     );
   }

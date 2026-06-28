@@ -1,9 +1,9 @@
 <div class="landing-container">
   <!-- Nav Header -->
-  <header class="landing-header animate-fade-in animate-stagger-1">
-    <div class="logo">
+  <header class="landing-header animate-fade-in">
+    <div class="logo" routerLink="/" style="cursor: pointer;">
       <img src="assets/logo.png" alt="PunchUp Logo" class="logo-img">
-      <span class="logo-text">PunchUp <span class="v1-badge">V1</span></span>
+      <span class="logo-text">PunchUp <span class="v2-badge">V2</span></span>
     </div>
     <div class="header-actions">
       <ng-container *ngIf="!authService.isAuthenticated()">
@@ -16,276 +16,148 @@
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="badge-pill animate-slide-up animate-stagger-2">PunchUp V1 is Live</div>
-    <h1 class="hero-title animate-slide-up animate-stagger-3">Consistency <span class="highlight">compounds</span>.</h1>
-    <p class="hero-subtitle animate-slide-up animate-stagger-4">
-      Build streaks. Track meaningful work. Create momentum every single day.
-    </p>
+  <!-- Hero Content Area -->
+  <main class="hero-main">
+    <div class="hero-text-side">
+      <div class="version-tag animate-slide-up">Next-gen Habit Accountability</div>
+      <h1 class="hero-title animate-slide-up">
+        Build Consistency.<br>
+        Track Progress.<br>
+        Grow Together.
+      </h1>
+      <p class="hero-subtitle animate-slide-up">
+        PunchUp combines habit tracking, streaks, analytics and community accountability in one place.
+      </p>
 
-    <!-- Premium Hero Animation (Streak Counter & Consistency Grid) -->
-    <div class="hero-animation-container animate-slide-up animate-stagger-5">
-      <div class="hero-streak-display">
-        <span class="streak-label">BUILD MOMENTUM</span>
-        <div class="streak-value-row">
-          <span class="streak-number">{{ streakCount }}</span>
-          <span class="streak-days">Days</span>
-        </div>
-        <div class="streak-bar">
-          <div class="streak-bar-fill" [style.width.%]="streakCount"></div>
-        </div>
-        <span class="streak-sub-label" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Starts With Day 1</span>
-      </div>
-      <div class="hero-grid-display">
-        <div class="hero-grid-header">
-          <span>Consistency Pattern</span>
-          <span class="status-indicator"><span class="dot"></span> Active Tracking</span>
-        </div>
-        <div class="hero-grid-cells">
-          <div *ngFor="let cell of heroGrid"
-               [class]="'hero-cell intensity-' + cell.intensity"
-               [class.active]="cell.active"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="cta-group animate-slide-up animate-stagger-6">
-      <ng-container *ngIf="!authService.isAuthenticated()">
-        <button (click)="login()" class="btn btn-primary btn-lg">Continue With Google</button>
-      </ng-container>
-      <ng-container *ngIf="authService.isAuthenticated()">
-        <a routerLink="/dashboard" class="btn btn-primary btn-lg">Start Building Momentum</a>
-      </ng-container>
-      <a href="#features" class="btn btn-secondary btn-lg">Explore Features</a>
-    </div>
-
-    <!-- Animated Scroll Down Indicator -->
-    <div class="scroll-down-indicator animate-fade-in animate-stagger-7">
-      <a href="#features" class="scroll-down-link">
-        <span class="scroll-text">Explore PunchUp</span>
-        <svg class="down-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <polyline points="19 12 12 19 5 12"></polyline>
-        </svg>
-      </a>
-    </div>
-  </section>
-
-  <!-- Problem Section -->
-  <section id="features" class="section-reveal problem-section">
-    <div class="section-tag">THE PROBLEM</div>
-    <h2 class="section-title">Productivity shouldn't feel like a chore.</h2>
-    <p class="section-subtitle">Why traditional task managers and trackers fail to build long-term momentum.</p>
-
-    <div class="problem-grid">
-      <div class="problem-card card">
-        <div class="card-icon">✕</div>
-        <h3>Overwhelming Categories</h3>
-        <p>Too much time is spent organizing tasks into folders, categories, and tags instead of actually doing the work.</p>
-      </div>
-      <div class="problem-card card">
-        <div class="card-icon">✕</div>
-        <h3>No Visual Momentum</h3>
-        <p>Once a task is checked off, it disappears. There is no cumulative sense of growth, making it easy to quit.</p>
-      </div>
-      <div class="problem-card card">
-        <div class="card-icon">✕</div>
-        <h3>Zero Streak Protection</h3>
-        <p>Missing a single day resets everything, killing motivation. You need a signature tracker that keeps you moving.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- How PunchUp Works -->
-  <section class="section-reveal how-it-works-section">
-    <div class="section-tag">METHODOLOGY</div>
-    <h2 class="section-title">How PunchUp builds consistency.</h2>
-    <p class="section-subtitle">A simple, raw, and focused loop designed to keep you performing.</p>
-
-    <div class="steps-grid">
-      <div class="step-card card">
-        <div class="step-num">01</div>
-        <h3>Add raw, focused tasks</h3>
-        <p>Set a title, description, priority, and due date. No complex setups. No categories. Just raw items.</p>
-      </div>
-      <div class="step-card card">
-        <div class="step-num">02</div>
-        <h3>Show up & mark done</h3>
-        <p>Every completed action shifts the intensity of your personal consistency grid. Watch your grid light up.</p>
-      </div>
-      <div class="step-card card">
-        <div class="step-num">03</div>
-        <h3>Protect your streak</h3>
-        <p>Build daily momentum. Let the visual grid and stats holding you accountable become your proudest portfolio.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Consistency Grid Showcase -->
-  <section class="section-reveal showcase-section">
-    <div class="section-tag">SIGNATURE FEATURE</div>
-    <h2 class="section-title">The Consistency Grid</h2>
-    <p class="section-subtitle">Your productivity timeline, visualized. Color intensity shifts dynamically based on completed items.</p>
-
-    <div class="showcase-scroll-container">
-      <div class="showcase-scroll">
-        <div class="showcase-grid-content">
-          <div class="grid-days">
-            <span class="day-label">Mon</span>
-            <span class="day-label">Wed</span>
-            <span class="day-label">Fri</span>
-          </div>
-          <div class="grid-cells-row">
-            <div *ngFor="let cell of mockGrid"
-                 [class]="'grid-cell intensity-' + cell.intensity"
-                 [title]="cell.date + ': ' + cell.tasks + ' tasks completed'">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid-legend">
-      <span>Less</span>
-      <div class="legend-cell intensity-0"></div>
-      <div class="legend-cell intensity-1"></div>
-      <div class="legend-cell intensity-2"></div>
-      <div class="legend-cell intensity-3"></div>
-      <span>More</span>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section class="section-reveal analytics-showcase-section">
-    <div class="section-tag">THE SYSTEM</div>
-    <h2 class="section-title">Built for consistency.</h2>
-    <p class="section-subtitle">Everything you need to build long-term momentum without the friction.</p>
-
-    <div class="analytics-preview-grid">
-      <!-- Show Up Daily -->
-      <div class="preview-metric-card card">
-        <span class="metric-label">CORE LOOP</span>
-        <h3 class="metric-value">Show up daily</h3>
-        <p class="metric-desc">Add a task, complete it, and watch your consistency grid light up. Simple actions compound.</p>
-      </div>
-      <!-- Stay Motivated -->
-      <div class="preview-metric-card card">
-        <span class="metric-label">VISUAL PROGRESS</span>
-        <h3 class="metric-value">Stay motivated</h3>
-        <p class="metric-desc">Your streak and grid act as a visual portfolio of your dedication. Don't break the chain.</p>
-      </div>
-      <!-- Motivate Others -->
-      <div class="preview-metric-card card">
-        <span class="metric-label">COMMUNITY (V2)</span>
-        <h3 class="metric-value">Motivate others</h3>
-        <p class="metric-desc">Share your records, interact with peers, and encourage your team to protect their streaks.</p>
-      </div>
-      <!-- Earn Badges -->
-      <div class="preview-metric-card card">
-        <span class="metric-label">MILESTONES (V2)</span>
-        <h3 class="metric-value">Earn badges</h3>
-        <p class="metric-desc">Unlock milestones and beautiful achievement cards as you hit 30, 60, and 100-day streaks.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Goal Showcase -->
-  <section class="section-reveal profile-showcase-section">
-    <div class="section-tag">YOUR PORTFOLIO</div>
-    <h2 class="section-title">Aim for 100 days.</h2>
-    <p class="section-subtitle">Turn your daily efforts into a visual portfolio of reliability and discipline.</p>
-
-    <div class="profile-card-wrapper">
-      <div class="profile-showcase-card card">
-        <div class="profile-showcase-header">
-          <div class="user-meta">
-            <h4>Become Unstoppable</h4>
-            <span>Build habits that stick</span>
-          </div>
-          <span class="streak-badge">💯 100 Day Streak Goal</span>
-        </div>
-        <p class="profile-bio">Show up. Put in the work. Let the grid prove your dedication to yourself and others.</p>
-        <div class="mini-grid-container">
-          <span class="mini-grid-title">Consistency Grid Tracker</span>
-          <div class="mini-cells-matrix">
-            <div *ngFor="let cell of mockGrid.slice(0, 42)" [class]="'grid-cell intensity-' + cell.intensity"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Science of Consistency Section -->
-  <section class="section-reveal science-section">
-    <div class="section-tag">BEHAVIORAL SCIENCE</div>
-    <h2 class="section-title">Why compounding works.</h2>
-    <p class="section-subtitle">Consistency isn't about giant leaps; it is about minor daily iterations that compound over time.</p>
-
-    <div class="science-grid">
-      <div class="science-card card">
-        <div class="science-card-header">
-          <div class="science-badge">01 / MATH</div>
-          <h3>The 1.01 vs 0.99 Rule</h3>
-        </div>
-        <p class="science-desc">
-          Improving by just <strong>1% every day</strong> results in a <strong>37.7x improvement</strong> over the course of a year. Declining by 1% daily reduces your capacity down to almost zero. Momentum is math.
-        </p>
-        <div class="science-graph-wrapper">
-          <div class="science-line-up"></div>
-          <div class="science-line-down"></div>
-        </div>
-      </div>
-
-      <div class="science-card card">
-        <div class="science-card-header">
-          <div class="science-badge">02 / HABITS</div>
-          <h3>Cognitive Friction</h3>
-        </div>
-        <p class="science-desc">
-          Every time you decide whether to perform a habit, you consume willpower. By turning daily tasks into non-negotiable streaks, you bypass decision fatigue entirely. Your actions become automatic reflexes.
-        </p>
-      </div>
-
-      <div class="science-card card">
-        <div class="science-card-header">
-          <div class="science-badge">03 / MOMENTUM</div>
-          <h3>Visual Feedback</h3>
-        </div>
-        <p class="science-desc">
-          The brain craves immediate rewards. Traditional tasks offer delayed gratification. Our signature consistency grid turns invisible effort into a concrete visual board of progress, releasing dopamine on completion.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Final CTA -->
-  <section class="section-reveal final-cta-section">
-    <div class="cta-box card">
-      <h2 class="cta-title">Ready to hold yourself accountable?</h2>
-      <p class="cta-subtitle">Join developers and creators building habits and tracking daily progress.</p>
-      <div class="cta-btn-wrapper">
+      <div class="cta-actions animate-slide-up">
         <ng-container *ngIf="!authService.isAuthenticated()">
-          <button (click)="login()" class="btn btn-primary btn-lg">Show Up Today</button>
+          <button (click)="login()" class="btn btn-primary btn-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px; vertical-align: middle;">
+              <path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C18.155 2.186 15.427 1 12.24 1 5.923 1 1 5.923 1 12s4.923 11 11.24 11c6.59 0 10.99-4.63 10.99-11.19 0-.75-.08-1.32-.2-1.88H12.24z"/>
+            </svg>
+            Continue with Google
+          </button>
         </ng-container>
         <ng-container *ngIf="authService.isAuthenticated()">
-          <a routerLink="/dashboard" class="btn btn-primary btn-lg">Go to Dashboard</a>
+          <a routerLink="/dashboard" class="btn btn-primary btn-lg">Start Tracking Progress</a>
         </ng-container>
       </div>
     </div>
-  </section>
 
-  <!-- Footer -->
-  <footer class="landing-footer">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <img src="assets/logo.png" alt="PunchUp Logo" class="footer-logo">
-        <span>PunchUp V1</span>
+    <!-- Right Side Mockup Visual -->
+    <div class="hero-visual-side animate-slide-up">
+      <div class="visual-card">
+        <div class="visual-header">
+          <div class="visual-dots">
+            <span class="dot-red"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green"></span>
+          </div>
+          <span class="visual-title">Make your dashboard like this</span>
+        </div>
+
+        <div class="visual-body">
+
+          <!-- State Label -->
+          <div class="grid-state-bar">
+            <span class="grid-state-label" [class.label-empty]="!gridFilling && !gridFull" [class.label-filling]="gridFilling" [class.label-full]="gridFull">
+              {{ gridFull ? 'Grid complete — that\'s consistency.' : (gridFilling ? 'Filling up...' : 'Your grid starts empty. Fill it daily.') }}
+            </span>
+            <span class="grid-fill-pct">{{ fillPercent }}%</span>
+          </div>
+
+          <!-- Grid -->
+          <div class="grid-container-wrapper">
+            <div class="months-row">
+              <span *ngFor="let h of monthHeaders" [style.grid-column-start]="h.colIndex + 1">{{ h.name }}</span>
+            </div>
+
+            <div class="grid-and-labels">
+              <div class="days-column">
+                <span></span>
+                <span>Mon</span>
+                <span></span>
+                <span>Wed</span>
+                <span></span>
+                <span>Fri</span>
+                <span></span>
+              </div>
+
+              <div class="cells-matrix-container">
+                <div class="cells-matrix">
+                  <div *ngFor="let cell of gridCells"
+                       class="grid-cell"
+                       [class.cell-lit]="cell.lit"
+                       [class.cell-pulse]="cell.pulse"
+                       [class.cell-dim]="cell.dim">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-legend-row">
+              <span class="legend-text">Empty</span>
+              <div class="legend-cells">
+                <div class="legend-cell lc-0"></div>
+                <div class="legend-cell lc-1"></div>
+                <div class="legend-cell lc-2"></div>
+                <div class="legend-cell lc-3"></div>
+              </div>
+              <span class="legend-text">Full</span>
+            </div>
+          </div>
+
+          <!-- Community CTA -->
+          <div class="community-cta">
+            <span class="cta-dot"></span>
+            <span class="cta-text">Post about this in community  stay motivated, motivate others</span>
+            <a routerLink="/community" class="cta-link">Post now</a>
+          </div>
+        </div>
       </div>
-      <div class="creator-credits">
-        <span>Built by <a href="https://github.com/utkarszz" target="_blank" rel="noopener noreferrer">Utkarsh Singh</a></span>
+    </div>
+  </main>
+
+  <!-- 4 Feature Highlights Footer -->
+  <footer class="features-footer">
+    <div class="feature-item">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
       </div>
-      <span class="copy-text">&copy; 2026 PunchUp. Ready for production.</span>
+      <div class="feature-info">
+        <h4>Track Daily Habits</h4>
+        <p>Set consistent tasks and complete them day by day.</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      </div>
+      <div class="feature-info">
+        <h4>Maintain Streaks</h4>
+        <p>Keep your streak alive and build long-term momentum.</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      </div>
+      <div class="feature-info">
+        <h4>Visualize Progress</h4>
+        <p>Observe your consistency grow via heatmap charts.</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      </div>
+      <div class="feature-info">
+        <h4>Productivity Community</h4>
+        <p>Share achievements, comment, and grow together.</p>
+      </div>
     </div>
   </footer>
 </div>

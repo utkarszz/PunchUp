@@ -10,7 +10,7 @@ const {
   searchUsers,
   getSuggestions,
   checkUsername,
- 
+  deleteAccount,
 } = require("../controllers/userController");
 
 const router = express.Router();
@@ -18,6 +18,7 @@ const router = express.Router();
 router.get("/me", protect, getMyProfile);
 
 router.put("/me", protect, updateProfile);
+router.delete("/me", protect, deleteAccount);
 router.get(
   "/check-username/:username",
   checkUsername

@@ -101,21 +101,30 @@ const deleteComment = async (
       });
     }
 
-    if (
-      comment.user.toString() !==
-      req.user._id.toString()
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Not authorized",
-      });
-    }
-
     const post =
       await Post.findById(
         comment.post
       );
+
+    const isCommentAuthor =
+      comment.user.toString() ===
+      req.user._id.toString();
+
+    const isPostAuthor =
+      post &&
+      post.user.toString() ===
+      req.user._id.toString();
+
+    if (
+      !isCommentAuthor &&
+      !isPostAuthor
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Not authorized to delete this comment",
+      });
+    }
 
     if (post) {
       post.commentsCount =

@@ -20,4 +20,14 @@ export class UploadService {
       formData
     );
   }
+
+  public uploadImage(file: File): Observable<{ success: boolean; imageUrl: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return this.http.post<{ success: boolean; imageUrl: string }>(
+      `${this.baseUrl}/image`,
+      formData
+    );
+  }
 }

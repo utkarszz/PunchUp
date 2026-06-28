@@ -52,48 +52,94 @@ import { TaskService, Task } from '../../core/services/task.service';
         </div>
       </section>
 
-      <!-- Tasks List -->
+      <!-- Tasks List grouped by Today / Upcoming -->
       <section class="tasks-list-section">
-        <div class="tasks-grid" *ngIf="filteredTasks.length > 0; else emptyState">
-          <div *ngFor="let task of filteredTasks" class="card task-card" [class.completed]="task.completed">
-            <div class="task-card-header">
-              <div class="task-check-row">
-                <label class="checkbox-container">
-                  <input
-                    type="checkbox"
-                    [checked]="task.completed"
-                    [disabled]="task.completed"
-                    (change)="onComplete(task)" />
-                  <span class="checkmark"></span>
-                </label>
-                <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
-              </div>
-              <div class="task-actions">
-                <button (click)="openEditModal(task)" class="btn-icon" title="Edit Task">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button (click)="onDelete(task._id)" class="btn-icon delete-icon" title="Delete Task">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-              </div>
-            </div>
 
-            <p class="task-desc">{{ task.description || 'No description provided.' }}</p>
-
-            <div class="task-card-footer">
-              <span [class]="'badge badge-' + task.priority">{{ task.priority }} Priority</span>
+        <!-- Today Group -->
+        <div class="group-section" *ngIf="todayTasks.length > 0">
+          <div class="group-label">Today</div>
+          <div class="tasks-grid">
+            <div *ngFor="let task of todayTasks" class="card task-card" [class.completed]="task.completed">
+              <div class="task-card-header">
+                <div class="task-check-row">
+                  <label class="checkbox-container">
+                    <input type="checkbox" [checked]="task.completed" [disabled]="task.completed" (change)="onComplete(task)" />
+                    <span class="checkmark"></span>
+                  </label>
+                  <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
+                </div>
+                <div class="task-actions">
+                  <button (click)="openEditModal(task)" class="btn-icon" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button (click)="onDelete(task._id)" class="btn-icon delete-icon" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </div>
+              <p class="task-desc">{{ task.description || 'No description.' }}</p>
+              <div class="task-card-footer">
+                <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <ng-template #emptyState>
-          <div class="card empty-tasks-state">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-            <h3>No tasks match your criteria</h3>
-            <p>Try clearing your filters or create a new task to continue building consistency.</p>
-            <button (click)="openCreateModal()" class="btn btn-primary">Create Task</button>
+        <!-- Upcoming Group -->
+        <div class="group-section" *ngIf="upcomingTasks.length > 0">
+          <div class="group-label">Upcoming</div>
+          <div class="tasks-grid">
+            <div *ngFor="let task of upcomingTasks" class="card task-card" [class.completed]="task.completed">
+              <div class="task-card-header">
+                <div class="task-check-row">
+                  <label class="checkbox-container">
+                    <input type="checkbox" [checked]="task.completed" [disabled]="task.completed" (change)="onComplete(task)" />
+                    <span class="checkmark"></span>
+                  </label>
+                  <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
+                </div>
+                <div class="task-actions">
+                  <button (click)="openEditModal(task)" class="btn-icon" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button (click)="onDelete(task._id)" class="btn-icon delete-icon" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </div>
+              <p class="task-desc">{{ task.description || 'No description.' }}</p>
+              <div class="task-card-footer">
+                <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+                <span class="due-date-badge" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+              </div>
+            </div>
           </div>
-        </ng-template>
+        </div>
+
+        <!-- No due date group -->
+        <div class="group-section" *ngIf="noDueDateTasks.length > 0">
+          <div class="group-label">Other Tasks</div>
+          <div class="tasks-grid">
+            <div *ngFor="let task of noDueDateTasks" class="card task-card" [class.completed]="task.completed">
+              <div class="task-card-header">
+                <div class="task-check-row">
+                  <label class="checkbox-container">
+                    <input type="checkbox" [checked]="task.completed" [disabled]="task.completed" (change)="onComplete(task)" />
+                    <span class="checkmark"></span>
+                  </label>
+                  <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
+                </div>
+                <div class="task-actions">
+                  <button (click)="openEditModal(task)" class="btn-icon" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button (click)="onDelete(task._id)" class="btn-icon delete-icon" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </div>
+              <p class="task-desc">{{ task.description || 'No description.' }}</p>
+              <div class="task-card-footer">
+                <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card empty-tasks-state" *ngIf="todayTasks.length === 0 && upcomingTasks.length === 0 && noDueDateTasks.length === 0">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <h3>No tasks yet</h3>
+          <p>Create your first task to start building daily consistency.</p>
+          <button (click)="openCreateModal()" class="btn btn-primary">Create Task</button>
+        </div>
       </section>
 
       <!-- Task Modal (Create & Edit) -->
@@ -120,6 +166,10 @@ import { TaskService, Task } from '../../core/services/task.service';
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                 </select>
+              </div>
+              <div class="form-group">
+                <label>Due Date (optional)</label>
+                <input type="date" [(ngModel)]="modalTask.dueDate" name="dueDate" />
               </div>
             </div>
 
@@ -192,6 +242,30 @@ import { TaskService, Task } from '../../core/services/task.service';
     }
 
     /* Tasks Grid */
+    .tasks-list-section { display: flex; flex-direction: column; gap: 2rem; }
+
+    .group-section { display: flex; flex-direction: column; gap: 1rem; }
+
+    .group-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .due-date-badge {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.125rem 0.5rem;
+    }
+
     .tasks-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -524,8 +598,9 @@ export class TasksComponent implements OnInit {
 
   public allTasks: Task[] = [];
   public filteredTasks: Task[] = [];
-
-  // Filter models
+  public todayTasks: Task[] = [];
+  public upcomingTasks: Task[] = [];
+  public noDueDateTasks: Task[] = [];
   public filterSearch = '';
   public filterStatus = 'all';
   public filterPriority = 'all';
@@ -558,21 +633,42 @@ export class TasksComponent implements OnInit {
 
   public applyFilters() {
     this.filteredTasks = this.allTasks.filter(task => {
-      // Search filter
       const matchesSearch = !this.filterSearch ||
         task.title.toLowerCase().includes(this.filterSearch.toLowerCase()) ||
         task.description.toLowerCase().includes(this.filterSearch.toLowerCase());
-
-      // Status filter
       let matchesStatus = true;
       if (this.filterStatus === 'pending') matchesStatus = !task.completed;
       if (this.filterStatus === 'completed') matchesStatus = task.completed;
-
-      // Priority filter
       const matchesPriority = this.filterPriority === 'all' || task.priority === this.filterPriority;
-
       return matchesSearch && matchesStatus && matchesPriority;
     });
+    this.groupTasks();
+  }
+
+  private groupTasks() {
+    const todayStr = new Date().toDateString();
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    this.todayTasks = this.filteredTasks.filter(t => {
+      if (!t.dueDate) return false;
+      const due = new Date(t.dueDate);
+      return due.toDateString() === todayStr;
+    });
+
+    this.upcomingTasks = this.filteredTasks.filter(t => {
+      if (!t.dueDate) return false;
+      const due = new Date(t.dueDate);
+      due.setHours(0, 0, 0, 0);
+      return due > now && due.toDateString() !== todayStr;
+    });
+
+    this.noDueDateTasks = this.filteredTasks.filter(t => !t.dueDate);
+  }
+
+  public formatDueDate(dateStr: string): string {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
   private resetModalTask(): Partial<Task> {
