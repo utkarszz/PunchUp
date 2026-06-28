@@ -147,7 +147,7 @@ import { TaskService, Task } from '../../core/services/task.service';
         <div class="modal-content" (click)="$event.stopPropagation()">
           <h3 class="modal-title">{{ isEditMode ? 'Edit Task' : 'Create New Task' }}</h3>
 
-          <form (submit)="saveTask()" class="modal-form">
+          <form (submit)="saveTask(); $event.preventDefault()" class="modal-form">
             <div class="form-group">
               <label>Task Title *</label>
               <input type="text" [(ngModel)]="modalTask.title" name="title" required placeholder="e.g. Code 1 hour of Angular" />
@@ -635,7 +635,7 @@ export class TasksComponent implements OnInit {
     this.filteredTasks = this.allTasks.filter(task => {
       const matchesSearch = !this.filterSearch ||
         task.title.toLowerCase().includes(this.filterSearch.toLowerCase()) ||
-        task.description.toLowerCase().includes(this.filterSearch.toLowerCase());
+        (task.description || '').toLowerCase().includes(this.filterSearch.toLowerCase());
       let matchesStatus = true;
       if (this.filterStatus === 'pending') matchesStatus = !task.completed;
       if (this.filterStatus === 'completed') matchesStatus = task.completed;
