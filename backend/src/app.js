@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const passport = require('./config/passport');
+// Health check route — no auth, no DB, responds immediately
+const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const streakRoutes = require('./routes/streakRoutes');
@@ -37,6 +39,13 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(passport.initialize());
+
+// ── Health check ─────────────────────────────────────────────────────────────
+// Mounted BEFORE all API routes so it is always reachable by uptime monitors.
+// No authentication middleware is applied. No DB queries are made.
+app.use('/health', healthRoutes);
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/streaks', streakRoutes);
