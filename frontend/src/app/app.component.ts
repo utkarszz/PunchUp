@@ -16,7 +16,7 @@ import { ThemeService } from './core/services/theme.service';
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   public wakeupService = inject(BackendWakeupService);
   public themeService = inject(ThemeService);
   private router = inject(Router);

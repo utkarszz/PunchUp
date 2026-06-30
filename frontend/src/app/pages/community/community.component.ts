@@ -188,11 +188,21 @@ import { UploadService } from '../../core/services/upload.service';
       <!-- Right: Suggested Users -->
       <aside class="suggestions-column">
         <div class="card suggestions-card animate-slide-up">
-          <h3 class="suggestions-title">People to Follow</h3>
-          <div class="suggestions-loading" *ngIf="loadingSuggestions">
+          <div class="suggestions-header">
+            <h3 class="suggestions-title">People to Follow</h3>
+            <button class="btn-icon refresh-btn" (click)="loadSuggestions()" title="Refresh Suggestions" [disabled]="loadingSuggestions">
+              <svg [class.spinning]="loadingSuggestions" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 4v6h-6"></path>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="suggestions-loading" *ngIf="loadingSuggestions && suggestions.length === 0">
             <div class="skeleton-user" *ngFor="let i of [1,2,3]"></div>
           </div>
-          <div class="suggestions-list" *ngIf="!loadingSuggestions">
+          
+          <div class="suggestions-list" *ngIf="!(loadingSuggestions && suggestions.length === 0)">
             <div class="suggestion-item" *ngFor="let user of suggestions">
               <a [routerLink]="['/user', user.username]" class="suggestion-user-link">
                 <img
@@ -216,6 +226,10 @@ import { UploadService } from '../../core/services/upload.service';
               </button>
             </div>
             <p class="no-suggestions" *ngIf="suggestions.length === 0">No suggestions right now.</p>
+
+            <button *ngIf="suggestions.length > 0 && suggestionsLimit < 10" (click)="viewMoreSuggestions()" class="btn btn-secondary btn-sm view-more-suggestions-btn" [disabled]="loadingSuggestions">
+              View More People
+            </button>
           </div>
         </div>
       </aside>
@@ -571,6 +585,50 @@ import { UploadService } from '../../core/services/upload.service';
 
     .suggestions-card { display: flex; flex-direction: column; gap: 1.25rem; }
 
+    .suggestions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .refresh-btn {
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      padding: 4px;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .refresh-btn:hover:not([disabled]) {
+      color: var(--text-primary);
+      background: var(--surface-hover);
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .spinning {
+      animation: spin 0.8s linear infinite;
+    }
+
+    .view-more-suggestions-btn {
+      width: 100%;
+      margin-top: 0.5rem;
+      justify-content: center;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     .suggestions-title {
       font-size: 1rem;
       font-weight: 600;
@@ -675,6 +733,8 @@ export class CommunityComponent implements OnInit {
 
   public currentUserId = '';
 
+  suggestionsLimit = 3;
+
   ngOnInit() {
     this.authService.currentUser$.subscribe(u => {
       if (u) this.currentUserId = u._id;
@@ -685,10 +745,25 @@ export class CommunityComponent implements OnInit {
       error: () => { this.isLoading = false; }
     });
 
-    this.followService.getSuggestions().subscribe({
-      next: (res) => { this.suggestions = res.users || []; this.loadingSuggestions = false; },
-      error: () => { this.loadingSuggestions = false; }
+    this.loadSuggestions();
+  }
+
+  loadSuggestions() {
+    this.loadingSuggestions = true;
+    this.followService.getSuggestions(this.suggestionsLimit).subscribe({
+      next: (res) => {
+        this.suggestions = res.users || [];
+        this.loadingSuggestions = false;
+      },
+      error: () => {
+        this.loadingSuggestions = false;
+      }
     });
+  }
+
+  viewMoreSuggestions() {
+    this.suggestionsLimit = 10;
+    this.loadSuggestions();
   }
 
   isLiked(post: Post): boolean { return post.likes && post.likes.includes(this.currentUserId); }
@@ -738,7 +813,17 @@ export class CommunityComponent implements OnInit {
     if (!content) return;
     this.postService.addComment(post._id, content).subscribe(res => {
       if (!this.commentMap[post._id]) this.commentMap[post._id] = [];
-      this.commentMap[post._id].push(res.comment);
+      const me = this.authService.currentUserValue;
+      const enrichedComment = {
+        ...res.comment,
+        user: {
+          _id: me?._id || '',
+          username: me?.username || '',
+          displayName: me?.displayName || '',
+          profilePicture: me?.profilePicture || ''
+        }
+      };
+      this.commentMap[post._id].push(enrichedComment);
       post.commentsCount = (post.commentsCount || 0) + 1;
       this.commentDraft[post._id] = '';
     });
@@ -786,7 +871,17 @@ export class CommunityComponent implements OnInit {
     this.isPosting = true;
     this.postService.createPost(this.newPostContent.trim(), this.uploadedImages).subscribe({
       next: (res) => {
-        this.posts.unshift(res.post);
+        const me = this.authService.currentUserValue;
+        const enrichedPost = {
+          ...res.post,
+          user: {
+            _id: me?._id || '',
+            username: me?.username || '',
+            displayName: me?.displayName || '',
+            profilePicture: me?.profilePicture || ''
+          }
+        };
+        this.posts.unshift(enrichedPost);
         this.newPostContent = '';
         this.uploadedImages = [];
         this.isPosting = false;

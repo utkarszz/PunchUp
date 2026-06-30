@@ -47,6 +47,14 @@ const userSchema = new mongoose.Schema(
     isOnboarded: {
       type: Boolean,
       default: false
+    },
+    isBanned: {
+      type: Boolean,
+      default: false
+    },
+    banReason: {
+      type: String,
+      default: ''
     }
   },
   {

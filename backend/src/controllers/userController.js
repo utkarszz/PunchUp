@@ -290,21 +290,36 @@ const searchUsers = async (req, res) => {
 
 const getSuggestions = async (req, res) => {
   try {
+    const limit = parseInt(req.query.limit) || 5;
+
     const follows = await Follow.find({
       follower: req.user._id,
     }).select("following");
 
     const followedIds = follows.map((follow) => follow.following);
-
     followedIds.push(req.user._id);
 
-    const suggestions = await User.find({
-      _id: {
-        $nin: followedIds,
+    // Get random suggestions
+    const suggestions = await User.aggregate([
+      {
+        $match: {
+          _id: { $nin: followedIds },
+          isOnboarded: true,
+          isBanned: { $ne: true }
+        }
       },
-    })
-      .select("username displayName profilePicture bio")
-      .limit(10);
+      {
+        $sample: { size: limit }
+      },
+      {
+        $project: {
+          username: 1,
+          displayName: 1,
+          profilePicture: 1,
+          bio: 1
+        }
+      }
+    ]);
 
     res.status(200).json({
       success: true,

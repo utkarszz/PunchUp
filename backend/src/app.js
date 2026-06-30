@@ -61,7 +61,10 @@ app.get('/', (req, res) => {
 });
 const notificationRoutes = require("./routes/notificationRoutes");
 const testRoute = require('./routes/testRoute');
+const adminRoutes = require('./routes/adminRoutes');
+
 app.use('/api/test', testRoute);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 module.exports = app;

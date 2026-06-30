@@ -31,6 +31,14 @@ const protect = async (req, res, next) => {
       });
     }
 
+    if (req.user.isBanned) {
+      return res.status(403).json({
+        success: false,
+        isBanned: true,
+        message: `Your account has been banned. Reason: ${req.user.banReason || "No reason specified"}`
+      });
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({

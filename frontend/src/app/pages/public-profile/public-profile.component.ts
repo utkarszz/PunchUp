@@ -105,23 +105,15 @@ interface GridDisplayCell {
 
         <!-- Network Stats Row -->
         <div class="network-stats-row animate-slide-up animate-stagger-1">
-          <a *ngIf="isMe" [routerLink]="['/user', profile.user.username, 'network']" [queryParams]="{ tab: 'followers' }" class="card network-stat-card">
+          <a [routerLink]="['/user', profile.user.username, 'network']" [queryParams]="{ tab: 'followers' }" class="card network-stat-card">
             <span class="network-num">{{ profile.stats.followers || 0 }}</span>
             <span class="network-label">Followers</span>
           </a>
-          <div *ngIf="!isMe" class="card network-stat-card static-card">
-            <span class="network-num">{{ profile.stats.followers || 0 }}</span>
-            <span class="network-label">Followers</span>
-          </div>
 
-          <a *ngIf="isMe" [routerLink]="['/user', profile.user.username, 'network']" [queryParams]="{ tab: 'following' }" class="card network-stat-card">
+          <a [routerLink]="['/user', profile.user.username, 'network']" [queryParams]="{ tab: 'following' }" class="card network-stat-card">
             <span class="network-num">{{ profile.stats.following || 0 }}</span>
             <span class="network-label">Following</span>
           </a>
-          <div *ngIf="!isMe" class="card network-stat-card static-card">
-            <span class="network-num">{{ profile.stats.following || 0 }}</span>
-            <span class="network-label">Following</span>
-          </div>
         </div>
 
         <!-- Contribution Grid -->

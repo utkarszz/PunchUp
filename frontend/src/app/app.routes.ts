@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -62,6 +63,11 @@ export const routes: Routes = [
     path: 'notifications',
     loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent),
     canActivate: [authGuard]
+  },
+  {
+    path: 'admin',
+    loadComponent: () => import('./pages/admin/admin.component').then(m => m.AdminComponent),
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: '**',

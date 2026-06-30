@@ -348,6 +348,7 @@ export class NetworkComponent implements OnInit {
     this.authService.currentUser$.subscribe(u => {
       if (u) {
         this.myUsername = u.username;
+        this.myEmail = u.email;
         this.checkAccess();
       }
     });
@@ -368,9 +369,13 @@ export class NetworkComponent implements OnInit {
     });
   }
 
+  myEmail = '';
+
   checkAccess() {
     if (this.username && this.myUsername) {
-      if (this.username.toLowerCase() !== this.myUsername.toLowerCase()) {
+      const isAdmin = this.myEmail === 'utkarzz1705@gmail.com';
+      const isOwner = this.username.toLowerCase() === this.myUsername.toLowerCase();
+      if (!isOwner && !isAdmin) {
         this.accessDenied = true;
         this.isLoading = false;
       } else {

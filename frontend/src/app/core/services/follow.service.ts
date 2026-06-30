@@ -25,8 +25,9 @@ export class FollowService {
     return this.http.delete(`${this.base}/follows/${username}`);
   }
 
-  getSuggestions(): Observable<{ success: boolean; users: FollowUser[] }> {
-    return this.http.get<{ success: boolean; users: FollowUser[] }>(`${this.base}/users/suggestions`);
+  getSuggestions(limit?: number): Observable<{ success: boolean; users: FollowUser[] }> {
+    const url = limit ? `${this.base}/users/suggestions?limit=${limit}` : `${this.base}/users/suggestions`;
+    return this.http.get<{ success: boolean; users: FollowUser[] }>(url);
   }
 
   getFollowers(username: string): Observable<{ success: boolean; followers: FollowUser[] }> {

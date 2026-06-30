@@ -524,16 +524,22 @@ export class OnboardingComponent implements OnInit {
   public onUsernameChange() {
     this.usernameError = '';
     this.isUsernameValid = false;
+    const trimmed = this.username.trim().toLowerCase();
+    if (trimmed) {
+      this.isCheckingUsername = true;
+    }
     this.usernameChanged$.next(this.username);
   }
 
   private checkUsernameAvailability(username: string) {
     this.isCheckingUsername = true;
+    this.usernameError = '';
     this.userService.checkUsername(username.toLowerCase()).subscribe({
       next: res => {
         this.isCheckingUsername = false;
         if (res.available || (this.user && username.toLowerCase() === this.user.username.toLowerCase())) {
           this.isUsernameValid = true;
+          this.usernameError = '';
         } else {
           this.isUsernameValid = false;
           this.usernameError = 'Username is already taken.';
@@ -542,6 +548,7 @@ export class OnboardingComponent implements OnInit {
       error: () => {
         this.isCheckingUsername = false;
         this.isUsernameValid = false;
+        this.usernameError = 'Could not verify username availability.';
       }
     });
   }
