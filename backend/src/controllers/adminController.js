@@ -7,14 +7,28 @@ const Comment = require("../models/Comment");
 const SavedPost = require("../models/SavedPost");
 const Notification = require("../models/Notification");
 
+const ADMIN_EMAIL = "utkarzz1705@gmail.com";
+
 // Get all users with full details
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-__v").sort({ createdAt: -1 });
+
+    // Normalize role: the admin is identified by email in middleware,
+    // but the DB role field may still be 'user'. Override it here so
+    // the frontend admin count is accurate.
+    const normalizedUsers = users.map((u) => {
+      const obj = u.toObject();
+      if (obj.email === ADMIN_EMAIL) {
+        obj.role = "admin";
+      }
+      return obj;
+    });
+
     res.status(200).json({
       success: true,
-      count: users.length,
-      users,
+      count: normalizedUsers.length,
+      users: normalizedUsers,
     });
   } catch (error) {
     res.status(500).json({
