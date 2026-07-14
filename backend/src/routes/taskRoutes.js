@@ -6,6 +6,7 @@ const {
   updateTask,
   deleteTask,
   completeTask,
+  getArchivedTasks,
 } = require("../controllers/taskController");
 
 const protect = require("../middlewares/authMiddleware");
@@ -15,6 +16,8 @@ const router = express.Router();
 router.post("/", protect, createTask);
 
 router.get("/", protect, getTasks);
+
+router.get("/archived", protect, getArchivedTasks);
 
 router.put("/:id", protect, updateTask);
 

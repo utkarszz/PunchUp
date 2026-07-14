@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 interface GridCell {
@@ -18,6 +18,7 @@ interface GridCell {
 })
 export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   public authService = inject(AuthService);
+  private router = inject(Router);
 
   // Grid state
   public gridCells: GridCell[] = [];
@@ -38,6 +39,10 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   private observer: IntersectionObserver | null = null;
 
   ngOnInit() {
+    if (this.authService.currentUserValue) {
+      this.router.navigate(['/community']);
+      return;
+    }
     this.buildEmptyGrid();
     this.buildMonthHeaders();
   }

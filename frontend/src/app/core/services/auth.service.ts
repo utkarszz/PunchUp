@@ -65,7 +65,7 @@ export class AuthService {
         if (user && user.isOnboarded === false) {
           this.router.navigate(['/onboarding']);
         } else {
-          this.router.navigate(['/']); // Redirect to landing page instead of dashboard
+          this.router.navigate(['/community']);
         }
       })
     );

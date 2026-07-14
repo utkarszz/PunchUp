@@ -15,6 +15,7 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const postRoutes = require("./routes/postRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const followRoutes = require("./routes/followRoutes");
+const searchRoutes = require("./routes/searchRoutes");
 
 const app = express();
 app.set('trust proxy', true);
@@ -62,6 +63,7 @@ app.use(
   "/api/follows",
   followRoutes
 );
+app.use("/api/search", searchRoutes);
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,

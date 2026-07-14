@@ -36,8 +36,12 @@ export class TaskService {
     return this.http.put<{ success: boolean; task: Task }>(`${this.baseUrl}/${id}`, task);
   }
 
-  public deleteTask(id: string): Observable<{ success: boolean; message: string }> {
-    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/${id}`);
+  public deleteTask(id: string, permanent = false): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/${id}${permanent ? '?permanent=true' : ''}`);
+  }
+
+  public getArchivedTasks(): Observable<{ success: boolean; count: number; tasks: Task[] }> {
+    return this.http.get<{ success: boolean; count: number; tasks: Task[] }>(`${this.baseUrl}/archived`);
   }
 
   public completeTask(id: string): Observable<{ success: boolean; message: string; task: Task }> {

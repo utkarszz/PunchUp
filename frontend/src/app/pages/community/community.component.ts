@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,6 +6,8 @@ import { PostService, Post, Comment } from '../../core/services/post.service';
 import { FollowService, FollowUser } from '../../core/services/follow.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UploadService } from '../../core/services/upload.service';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-community',
@@ -19,6 +21,114 @@ import { UploadService } from '../../core/services/upload.service';
         <div class="page-title animate-slide-up">
           <h1>Community</h1>
           <p class="subtitle">Share your progress. Inspire others.</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar-wrap animate-slide-up">
+          <div class="search-input-row">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              id="community-search"
+              type="text"
+              class="search-input"
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="onSearchInput($event)"
+              placeholder="Search users, posts, #hashtags…"
+              autocomplete="off"
+            />
+            <button *ngIf="searchQuery" class="search-clear-btn" (click)="clearSearch()" title="Clear search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <div class="search-spinner" *ngIf="isSearching">
+              <div class="spinner-small"></div>
+            </div>
+          </div>
+
+          <!-- Search Results Panel -->
+          <div class="search-results-panel" *ngIf="searchQuery.trim() && !isSearching">
+
+            <!-- Tabs -->
+            <div class="search-tabs">
+              <button class="search-tab" [class.active]="activeSearchTab === 'all'" (click)="setSearchTab('all')">All</button>
+              <button class="search-tab" [class.active]="activeSearchTab === 'users'" (click)="setSearchTab('users')">
+                Users <span class="tab-badge" *ngIf="searchResults.users.length > 0">{{ searchResults.users.length }}</span>
+              </button>
+              <button class="search-tab" [class.active]="activeSearchTab === 'posts'" (click)="setSearchTab('posts')">
+                Posts <span class="tab-badge" *ngIf="searchResults.posts.length > 0">{{ searchResults.posts.length }}</span>
+              </button>
+              <button class="search-tab" [class.active]="activeSearchTab === 'hashtags'" (click)="setSearchTab('hashtags')">
+                Hashtags <span class="tab-badge" *ngIf="searchResults.hashtags.length > 0">{{ searchResults.hashtags.length }}</span>
+              </button>
+            </div>
+
+            <!-- Empty State -->
+            <div class="search-empty" *ngIf="searchResults.users.length === 0 && searchResults.posts.length === 0 && searchResults.hashtags.length === 0">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <p>No results for "<strong>{{ searchQuery }}</strong>"</p>
+            </div>
+
+            <!-- Users Section -->
+            <div class="search-section" *ngIf="searchResults.users.length > 0 && (activeSearchTab === 'all' || activeSearchTab === 'users')">
+              <span class="search-section-label">Users</span>
+              <div class="search-user-item" *ngFor="let user of searchResults.users">
+                <a [routerLink]="['/user', user.username]" class="search-user-link">
+                  <img
+                    [src]="user.profilePicture || 'assets/default-avatar.png'"
+                    class="search-avatar"
+                    [alt]="user.username"
+                    onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=s'"
+                  />
+                  <div class="search-user-info">
+                    <span class="search-user-name">{{ user.displayName || user.username }}</span>
+                    <span class="search-user-handle">&#64;{{ user.username }}</span>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+            <!-- Posts Section -->
+            <div class="search-section" *ngIf="searchResults.posts.length > 0 && (activeSearchTab === 'all' || activeSearchTab === 'posts')">
+              <span class="search-section-label">Posts</span>
+              <div class="search-post-item" *ngFor="let post of searchResults.posts">
+                <a [routerLink]="['/user', post.user?.username]" class="search-post-author-link">
+                  <img
+                    [src]="post.user?.profilePicture || 'assets/default-avatar.png'"
+                    class="search-avatar"
+                    [alt]="post.user?.username"
+                    onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=p'"
+                  />
+                  <span class="search-post-author-name">{{ post.user?.displayName || post.user?.username }}</span>
+                </a>
+                <p class="search-post-excerpt">{{ post.content | slice:0:120 }}{{ post.content?.length > 120 ? '…' : '' }}</p>
+              </div>
+            </div>
+
+            <!-- Hashtags Section -->
+            <div class="search-section" *ngIf="searchResults.hashtags.length > 0 && (activeSearchTab === 'all' || activeSearchTab === 'hashtags')">
+              <span class="search-section-label">Hashtags</span>
+              <div class="search-hashtag-row">
+                <span class="search-hashtag-chip" *ngFor="let tag of searchResults.hashtags">
+                  {{ tag.name }} <span class="hashtag-count">{{ tag.count }}</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Load More -->
+            <button
+              class="btn btn-secondary btn-sm search-load-more-btn"
+              *ngIf="searchResults.users.length > 0 || searchResults.posts.length > 0"
+              (click)="loadMoreSearch()"
+              [disabled]="isLoadingMoreSearch"
+            >
+              {{ isLoadingMoreSearch ? 'Loading…' : 'Load More' }}
+            </button>
+          </div>
         </div>
 
         <!-- Composer -->
@@ -254,6 +364,218 @@ import { UploadService } from '../../core/services/upload.service';
 
     .page-title h1 { font-size: 1.75rem; font-weight: 700; }
     .subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+    /* ── Search Bar ─────────────────────────────────────────────────────────── */
+    .search-bar-wrap {
+      position: relative;
+      z-index: 200;
+      isolation: isolate;
+    }
+
+    .search-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.625rem 0.875rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-input-row:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+    }
+
+    .search-icon { color: var(--text-muted); flex-shrink: 0; }
+
+    .search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 0.9375rem;
+      font-family: var(--font-sans);
+      min-width: 0;
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .search-clear-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      border-radius: 50%;
+      transition: color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .search-clear-btn:hover { color: var(--text-primary); }
+    .search-spinner { display: flex; align-items: center; }
+
+    .search-results-panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    .search-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 0.75rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .search-tabs::-webkit-scrollbar { display: none; }
+
+    .search-tab {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      padding: 0.625rem 0.75rem;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .search-tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+
+    .tab-badge {
+      background: #6366f1;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 999px;
+      line-height: 1.6;
+    }
+
+    .search-section {
+      padding: 0.75rem 1rem 0.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .search-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .search-user-item { padding: 0.125rem 0; }
+
+    .search-user-link {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.5rem 0.25rem;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+
+    .search-user-link:hover { background: var(--surface-hover); }
+
+    .search-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border-hover);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .search-user-info { display: flex; flex-direction: column; }
+    .search-user-name { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+    .search-user-handle { font-size: 0.75rem; color: var(--text-muted); }
+
+    .search-post-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      padding: 0.5rem 0.25rem;
+      border-radius: var(--radius);
+      transition: background 0.15s ease;
+    }
+
+    .search-post-item:hover { background: var(--surface-hover); }
+
+    .search-post-author-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+
+    .search-post-author-name { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); }
+
+    .search-post-excerpt {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .search-hashtag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .search-hashtag-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .hashtag-count { font-size: 0.7rem; color: var(--text-muted); }
+
+    .search-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .search-empty p { font-size: 0.875rem; margin: 0; }
+    .search-empty svg { opacity: 0.4; }
+    .search-load-more-btn { display: flex; margin: 0.5rem auto 0.75rem; }
+    /* ─────────────────────────────────────────────────────────────────────── */
 
     /* Composer */
     .composer-card { display: flex; flex-direction: column; gap: 1rem; }
@@ -710,7 +1032,7 @@ import { UploadService } from '../../core/services/upload.service';
     }
   `]
 })
-export class CommunityComponent implements OnInit {
+export class CommunityComponent implements OnInit, OnDestroy {
   public authService = inject(AuthService);
   private postService = inject(PostService);
   private followService = inject(FollowService);
@@ -735,9 +1057,37 @@ export class CommunityComponent implements OnInit {
 
   suggestionsLimit = 3;
 
+  // Search properties
+  searchQuery = '';
+  isSearching = false;
+  activeSearchTab: 'all' | 'users' | 'posts' | 'hashtags' = 'all';
+  searchResults = {
+    users: [] as any[],
+    posts: [] as any[],
+    hashtags: [] as any[]
+  };
+  searchPage = 1;
+  isLoadingMoreSearch = false;
+  private searchSubject = new Subject<string>();
+  private searchSubscription?: Subscription;
+
   ngOnInit() {
     this.authService.currentUser$.subscribe(u => {
-      if (u) this.currentUserId = u._id;
+      if (u) {
+        this.currentUserId = u._id;
+        this.followService.getFollowing(u.username).subscribe({
+          next: (res) => {
+            if (res.success && res.following) {
+              res.following.forEach(f => {
+                const followedUser = f.following || f;
+                if (followedUser && followedUser.username) {
+                  this.followingSet.add(followedUser.username);
+                }
+              });
+            }
+          }
+        });
+      }
     });
 
     this.postService.getFeed().subscribe({
@@ -746,6 +1096,80 @@ export class CommunityComponent implements OnInit {
     });
 
     this.loadSuggestions();
+
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.executeSearch(query);
+    });
+  }
+
+  ngOnDestroy() {
+    this.searchSubscription?.unsubscribe();
+  }
+
+  onSearchInput(query: string) {
+    this.searchSubject.next(query);
+  }
+
+  executeSearch(query: string) {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      this.clearSearch();
+      return;
+    }
+    this.isSearching = true;
+    this.searchPage = 1;
+    this.postService.searchCommunity(trimmed, 1).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.searchResults = {
+            users: res.users || [],
+            posts: res.posts || [],
+            hashtags: res.hashtags || []
+          };
+        }
+        this.isSearching = false;
+      },
+      error: () => {
+        this.isSearching = false;
+      }
+    });
+  }
+
+  loadMoreSearch() {
+    const trimmed = this.searchQuery.trim();
+    if (!trimmed || this.isLoadingMoreSearch) return;
+
+    this.isLoadingMoreSearch = true;
+    const nextPage = this.searchPage + 1;
+    this.postService.searchCommunity(trimmed, nextPage).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.searchPage = nextPage;
+          this.searchResults.users = [...this.searchResults.users, ...(res.users || [])];
+          this.searchResults.posts = [...this.searchResults.posts, ...(res.posts || [])];
+          this.searchResults.hashtags = [...this.searchResults.hashtags, ...(res.hashtags || [])];
+        }
+        this.isLoadingMoreSearch = false;
+      },
+      error: () => {
+        this.isLoadingMoreSearch = false;
+      }
+    });
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+    this.searchResults = { users: [], posts: [], hashtags: [] };
+    this.searchPage = 1;
+    this.isSearching = false;
+    this.activeSearchTab = 'all';
+  }
+
+  setSearchTab(tab: 'all' | 'users' | 'posts' | 'hashtags') {
+    this.activeSearchTab = tab;
   }
 
   loadSuggestions() {

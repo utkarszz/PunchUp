@@ -135,9 +135,9 @@ export class LoginComponent implements OnInit {
   public isLoading = false;
 
   ngOnInit() {
-    // If user is already authenticated, send them to dashboard immediately
+    // If user is already authenticated, send them to community feed immediately
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/community']);
     }
 
     // Check if redirect has query params

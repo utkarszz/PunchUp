@@ -84,4 +84,10 @@ export class PostService {
   getSavedPosts(): Observable<{ success: boolean; savedPosts: any[] }> {
     return this.http.get<{ success: boolean; savedPosts: any[] }>(`${this.base}/posts/saved`);
   }
+
+  searchCommunity(query: string, page = 1, limit = 10): Observable<{ success: boolean; users: any[]; posts: Post[]; hashtags: any[] }> {
+    return this.http.get<{ success: boolean; users: any[]; posts: Post[]; hashtags: any[] }>(
+      `${this.base}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
+    );
+  }
 }

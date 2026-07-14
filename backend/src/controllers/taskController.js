@@ -44,8 +44,14 @@ const createTask = async (req, res) => {
 
 const getTasks = async (req, res) => {
   try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const tasks = await Task.find({
       user: req.user._id,
+      isDeleted: { $ne: true },
+      $or: [
+        { completed: false },
+        { completed: true, completedAt: { $gte: twentyFourHoursAgo } }
+      ]
     }).sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -126,11 +132,41 @@ const deleteTask = async (req, res) => {
       });
     }
 
-    await task.deleteOne();
+    const permanent = req.query.permanent === "true";
+
+    if (permanent) {
+      await task.deleteOne();
+    } else {
+      task.isDeleted = true;
+      await task.save();
+    }
 
     res.status(200).json({
       success: true,
-      message: "Task deleted successfully",
+      message: permanent ? "Task permanently deleted" : "Task deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const getArchivedTasks = async (req, res) => {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const tasks = await Task.find({
+      user: req.user._id,
+      completed: true,
+      completedAt: { $lt: twentyFourHoursAgo },
+      isDeleted: { $ne: true }
+    }).sort({ completedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      tasks,
     });
   } catch (error) {
     res.status(500).json({
@@ -181,4 +217,5 @@ module.exports = {
   updateTask,
   deleteTask,
   completeTask,
+  getArchivedTasks,
 };

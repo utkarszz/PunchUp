@@ -22,8 +22,21 @@ import { TaskService, Task } from '../../core/services/task.service';
         </button>
       </header>
 
-      <!-- Filter Bar -->
-      <section class="card filter-card">
+      <!-- View Tabs -->
+      <div class="view-tabs" role="tablist">
+        <button class="view-tab" role="tab" [class.active]="activeView === 'active'" (click)="setView('active')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          Active Tasks
+        </button>
+        <button class="view-tab" role="tab" [class.active]="activeView === 'archived'" (click)="setView('archived')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+          Archived Tasks
+          <span class="tab-count" *ngIf="archivedTasks.length > 0">{{ archivedTasks.length }}</span>
+        </button>
+      </div>
+
+      <!-- Filter Bar (Active view only) -->
+      <section class="card filter-card" *ngIf="activeView === 'active'">
         <div class="filter-row">
           <!-- Search input -->
           <div class="search-box">
@@ -53,7 +66,7 @@ import { TaskService, Task } from '../../core/services/task.service';
       </section>
 
       <!-- Tasks List grouped by Today / Upcoming -->
-      <section class="tasks-list-section">
+      <section class="tasks-list-section" *ngIf="activeView === 'active'">
 
         <!-- Today Group -->
         <div class="group-section" *ngIf="todayTasks.length > 0">
@@ -139,6 +152,49 @@ import { TaskService, Task } from '../../core/services/task.service';
           <h3>No tasks yet</h3>
           <p>Create your first task to start building daily consistency.</p>
           <button (click)="openCreateModal()" class="btn btn-primary">Create Task</button>
+        </div>
+      </section>
+
+      <!-- Archived Tasks Section -->
+      <section class="tasks-list-section" *ngIf="activeView === 'archived'">
+        <!-- Loading Archived -->
+        <div class="card empty-tasks-state" *ngIf="isLoadingArchived">
+          <div class="archive-spinner"></div>
+          <p>Loading archived tasks…</p>
+        </div>
+
+        <!-- Archived Grid -->
+        <div class="group-section" *ngIf="!isLoadingArchived && archivedTasks.length > 0">
+          <div class="group-label">Completed over 24 hours ago</div>
+          <div class="tasks-grid">
+            <div *ngFor="let task of archivedTasks" class="card task-card archived-task-card">
+              <div class="task-card-header">
+                <div class="task-check-row">
+                  <span class="archived-check">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </span>
+                  <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
+                </div>
+                <div class="task-actions">
+                  <button (click)="onPermanentDelete(task._id)" class="btn-icon delete-icon" title="Delete permanently">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
+                </div>
+              </div>
+              <p class="task-desc">{{ task.description || 'No description.' }}</p>
+              <div class="task-card-footer">
+                <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+                <span class="completed-badge" *ngIf="task.completedAt">Completed {{ formatDueDate(task.completedAt) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Archived Empty -->
+        <div class="card empty-tasks-state" *ngIf="!isLoadingArchived && archivedTasks.length === 0">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+          <h3>No archived tasks</h3>
+          <p>Tasks completed more than 24 hours ago will appear here.</p>
         </div>
       </section>
 
@@ -589,6 +645,78 @@ import { TaskService, Task } from '../../core/services/task.service';
         font-size: 0.875rem;
       }
     }
+
+    /* ── View Tabs ──────────────────────────────────────────────────────────── */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .view-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.75rem 1.25rem;
+      transition: color 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .view-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+    }
+
+    .view-tab:hover:not(.active) { color: var(--text-primary); }
+
+    .tab-count {
+      background: #6366f1;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 999px;
+      line-height: 1.6;
+    }
+
+    /* ── Archived Tasks ─────────────────────────────────────────────────────── */
+    .archived-task-card {
+      opacity: 0.8;
+    }
+
+    .archived-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--success, #4ade80) 20%, transparent);
+      color: var(--success, #4ade80);
+      flex-shrink: 0;
+    }
+
+    .completed-badge {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .archive-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    /* ─────────────────────────────────────────────────────────────────────── */
   `]
 
 })
@@ -604,6 +732,11 @@ export class TasksComponent implements OnInit {
   public filterSearch = '';
   public filterStatus = 'all';
   public filterPriority = 'all';
+
+  // View tabs
+  public activeView: 'active' | 'archived' = 'active';
+  public archivedTasks: Task[] = [];
+  public isLoadingArchived = false;
 
   // Modal control
   public showModal = false;
@@ -747,6 +880,33 @@ export class TasksComponent implements OnInit {
       this.taskService.deleteTask(id).subscribe((response: any) => {
         if (response.success) {
           this.loadTasks();
+        }
+      });
+    }
+  }
+
+  public setView(view: 'active' | 'archived') {
+    this.activeView = view;
+    if (view === 'archived' && this.archivedTasks.length === 0) {
+      this.loadArchivedTasks();
+    }
+  }
+
+  private loadArchivedTasks() {
+    this.isLoadingArchived = true;
+    this.taskService.getArchivedTasks().subscribe((response: any) => {
+      if (response.success) {
+        this.archivedTasks = response.tasks;
+      }
+      this.isLoadingArchived = false;
+    });
+  }
+
+  public onPermanentDelete(id: string) {
+    if (confirm('Permanently delete this task? This cannot be undone and may affect historical analytics.')) {
+      this.taskService.deleteTask(id, true).subscribe((response: any) => {
+        if (response.success) {
+          this.archivedTasks = this.archivedTasks.filter(t => t._id !== id);
         }
       });
     }
