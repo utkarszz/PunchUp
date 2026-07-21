@@ -61,15 +61,17 @@ import { ToastService } from '../../core/services/toast.service';
             <tbody>
               <tr *ngFor="let u of filteredUsers()" [class.row-banned]="u.isBanned">
                 <td>
-                  <div class="user-cell">
-                    <img [src]="u.profilePicture || 'assets/default-avatar.png'" 
-                         onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=' + u.username" 
-                         alt="Avatar" class="avatar" />
-                    <div class="user-info">
-                      <span class="display-name">{{ u.displayName || u.username }}</span>
-                      <span class="username">&#64;{{ u.username }}</span>
+                  <a [routerLink]="['/user', u.username]" class="user-cell-link">
+                    <div class="user-cell">
+                      <img [src]="u.profilePicture || 'assets/default-avatar.png'" 
+                           onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=' + u.username" 
+                           alt="Avatar" class="avatar" />
+                      <div class="user-info">
+                        <span class="display-name">{{ u.displayName || u.username }}</span>
+                        <span class="username">&#64;{{ u.username }}</span>
+                      </div>
                     </div>
-                  </div>
+                  </a>
                 </td>
                 <td class="email-cell">{{ u.email }}</td>
                 <td>{{ u.createdAt | date:'mediumDate' }}</td>
@@ -262,6 +264,18 @@ import { ToastService } from '../../core/services/toast.service';
 
     .row-banned {
       background: rgba(239, 68, 68, 0.02);
+    }
+
+    .user-cell-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      cursor: pointer;
+    }
+
+    .user-cell-link:hover .display-name {
+      color: var(--accent);
+      text-decoration: underline;
     }
 
     .user-cell {

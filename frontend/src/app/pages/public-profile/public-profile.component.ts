@@ -6,6 +6,8 @@ import { UserService, PublicProfile } from '../../core/services/user.service';
 import { FollowService } from '../../core/services/follow.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PostService, Post, Comment } from '../../core/services/post.service';
+import { AdminService } from '../../core/services/admin.service';
+import { Task } from '../../core/services/task.service';
 
 interface GridDisplayCell {
   date: string;
@@ -150,18 +152,21 @@ interface GridDisplayCell {
           </div>
         </div>
 
-        <!-- Tabs for profile posts vs saved posts (only visible to owner) -->
-        <div class="profile-tabs-container animate-slide-up" *ngIf="isMe" style="animation-delay: 240ms;">
+        <!-- Tabs for profile posts vs saved posts (visible if owner) or admin tasks (visible if admin) -->
+        <div class="profile-tabs-container animate-slide-up" *ngIf="isMe || isAdmin" style="animation-delay: 240ms;">
           <button class="tab-btn" [class.active]="activeTab === 'posts'" (click)="activeTab = 'posts'">
             Posts ({{ posts.length }})
           </button>
-          <button class="tab-btn" [class.active]="activeTab === 'saved'" (click)="activeTab = 'saved'">
+          <button class="tab-btn" [class.active]="activeTab === 'saved'" (click)="activeTab = 'saved'" *ngIf="isMe">
             Saved Posts ({{ savedPosts.length }})
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'adminTasks'" (click)="activeTab = 'adminTasks'" *ngIf="isAdmin">
+            User Tasks ({{ adminTasks.length }})
           </button>
         </div>
 
-        <!-- Section Title if not Me -->
-        <div class="section-title animate-slide-up" *ngIf="!isMe" style="animation-delay: 240ms;">
+        <!-- Section Title if not Me and not Admin -->
+        <div class="section-title animate-slide-up" *ngIf="!isMe && !isAdmin" style="animation-delay: 240ms;">
           <h3>Posts</h3>
         </div>
 
@@ -373,6 +378,72 @@ interface GridDisplayCell {
                   </div>
                 </div>
               </article>
+            </div>
+          </ng-container>
+
+          <!-- Active Tab: Admin Tasks View (Admin Only) -->
+          <ng-container *ngIf="activeTab === 'adminTasks' && isAdmin">
+            <div class="admin-tasks-dashboard animate-slide-up">
+              <!-- Summary Grid -->
+              <div class="admin-summary-grid">
+                <div class="admin-summary-card">
+                  <span class="admin-summary-label">Total Tasks</span>
+                  <span class="admin-summary-val">{{ adminTasks.length }}</span>
+                </div>
+                <div class="admin-summary-card">
+                  <span class="admin-summary-label">Completed</span>
+                  <span class="admin-summary-val text-success">{{ getCompletedTasksCount() }}</span>
+                </div>
+                <div class="admin-summary-card">
+                  <span class="admin-summary-label">Pending</span>
+                  <span class="admin-summary-val text-warning">{{ getPendingTasksCount() }}</span>
+                </div>
+                <div class="admin-summary-card">
+                  <span class="admin-summary-label">Current Streak</span>
+                  <span class="admin-summary-val text-accent">{{ adminStreak?.currentStreak || profile.stats.currentStreak || 0 }}</span>
+                </div>
+                <div class="admin-summary-card">
+                  <span class="admin-summary-label">Longest Streak</span>
+                  <span class="admin-summary-val text-warning">{{ adminStreak?.longestStreak || profile.stats.longestStreak || 0 }}</span>
+                </div>
+              </div>
+
+              <!-- Empty State for Admin Tasks -->
+              <div class="empty-state card" *ngIf="adminTasks.length === 0">
+                <p>This user has not created any tasks yet.</p>
+              </div>
+
+              <!-- Tasks List -->
+              <div class="admin-tasks-list" *ngIf="adminTasks.length > 0">
+                <div *ngFor="let t of adminTasks" class="admin-task-card" [class.completed]="t.completed">
+                  <div class="admin-task-status" [class.completed]="t.completed" [class.pending]="!t.completed">
+                    <!-- Icon: Checkmark if completed, clock/circle if pending -->
+                    <svg *ngIf="t.completed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <svg *ngIf="!t.completed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                  </div>
+
+                  <div class="admin-task-content">
+                    <h4 class="admin-task-title">{{ t.title }}</h4>
+                    <p class="admin-task-desc" *ngIf="t.description">{{ t.description }}</p>
+                    
+                    <div class="admin-task-meta">
+                      <span class="priority-badge" [class]="t.priority">{{ t.priority }} priority</span>
+                      <span class="category-badge" *ngIf="t.category">{{ t.category }}</span>
+                      
+                      <div class="admin-task-dates">
+                        <span>Created {{ formatTaskDate(t.createdAt) }}</span>
+                        <span *ngIf="t.dueDate">| Due {{ formatTaskDate(t.dueDate) }}</span>
+                        <span *ngIf="t.completed && t.completedAt" class="text-success">| Completed {{ formatTaskDate(t.completedAt) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </ng-container>
         </div>
@@ -1013,6 +1084,170 @@ interface GridDisplayCell {
       color: #f59e0b;
       background: rgba(245, 158, 11, 0.08);
     }
+
+    /* Admin Tasks Dashboard styles */
+    .admin-tasks-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .admin-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .admin-summary-card {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+
+    .admin-summary-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .admin-summary-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .admin-tasks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .admin-task-card {
+      display: flex;
+      gap: 1rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      transition: all 0.2s ease;
+      align-items: flex-start;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .admin-task-card:hover {
+      border-color: var(--border-hover);
+      background: var(--surface-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-task-status {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.2rem;
+    }
+
+    .admin-task-status.completed {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+    }
+
+    .admin-task-status.pending {
+      background: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+    }
+
+    .admin-task-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      text-align: left;
+    }
+
+    .admin-task-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .admin-task-card.completed .admin-task-title {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .admin-task-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .admin-task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .admin-task-dates {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .priority-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .priority-badge.high {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .priority-badge.medium {
+      background: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+    }
+
+    .priority-badge.low {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+
+    .category-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
   `]
 })
 export class PublicProfileComponent implements OnInit {
@@ -1021,6 +1256,7 @@ export class PublicProfileComponent implements OnInit {
   private followService = inject(FollowService);
   private authService = inject(AuthService);
   private postService = inject(PostService);
+  private adminService = inject(AdminService);
 
   public profile: PublicProfile | null = null;
   public isLoading = true;
@@ -1033,18 +1269,23 @@ export class PublicProfileComponent implements OnInit {
 
   public posts: Post[] = [];
   public savedPosts: Post[] = [];
-  public activeTab: 'posts' | 'saved' = 'posts';
+  public activeTab: 'posts' | 'saved' | 'adminTasks' = 'posts';
   public commentMap: Record<string, Comment[]> = {};
   public commentDraft: Record<string, string> = {};
   public savedPostIds = new Set<string>();
   public openCommentPostId: string | null = null;
   public currentUserId = '';
 
+  public isAdmin = false;
+  public adminTasks: Task[] = [];
+  public adminStreak: any = null;
+
   ngOnInit() {
     this.authService.currentUser$.subscribe(u => {
       if (u) {
         this.myUsername = u.username;
         this.currentUserId = u._id;
+        this.isAdmin = u.email === 'utkarzz1705@gmail.com';
         this.checkOwnershipAndFollowStatus();
         this.loadSavedPostIds();
       }
@@ -1073,6 +1314,12 @@ export class PublicProfileComponent implements OnInit {
           this.checkOwnershipAndFollowStatus();
           this.generateSimulatedGrid(response.profile.stats);
           this.loadUserPosts();
+
+          const currentUser = this.authService.currentUserValue;
+          if (currentUser && currentUser.email === 'utkarzz1705@gmail.com') {
+            this.isAdmin = true;
+            this.loadAdminTasks(response.profile.user._id);
+          }
         } else {
           this.errorMsg = 'Could not find the requested user profile.';
         }
@@ -1283,5 +1530,33 @@ export class PublicProfileComponent implements OnInit {
     }
 
     this.gridCells = cells;
+  }
+
+  private loadAdminTasks(userId: string) {
+    this.adminService.getUserTasks(userId).subscribe({
+      next: res => {
+        if (res.success) {
+          this.adminTasks = res.tasks || [];
+          this.adminStreak = res.streak || null;
+        }
+      },
+      error: err => {
+        console.error('Failed to load user tasks for admin:', err);
+      }
+    });
+  }
+
+  public formatTaskDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  public getCompletedTasksCount(): number {
+    return this.adminTasks.filter(t => t.completed).length;
+  }
+
+  public getPendingTasksCount(): number {
+    return this.adminTasks.filter(t => !t.completed).length;
   }
 }

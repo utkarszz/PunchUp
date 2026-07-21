@@ -8,6 +8,7 @@ const SavedPost = require("../models/SavedPost");
 const Notification = require("../models/Notification");
 
 const ADMIN_EMAIL = "utkarzz1705@gmail.com";
+const { checkAndResetStreak } = require("../services/streakService");
 
 // Get all users with full details
 const getAllUsers = async (req, res) => {
@@ -155,9 +156,42 @@ const adminUnbanUser = async (req, res) => {
   }
 };
 
+// Admin get user tasks and streaks
+const getUserTasksForAdmin = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const tasks = await Task.find({ user: userId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
+    let streak = await Streak.findOne({ user: userId });
+    if (streak) {
+      streak = await checkAndResetStreak(streak);
+    }
+
+    res.status(200).json({
+      success: true,
+      tasks,
+      streak,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllUsers,
   adminDeleteUser,
   adminBanUser,
   adminUnbanUser,
+  getUserTasksForAdmin,
 };

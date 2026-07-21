@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { Task } from './task.service';
 
 export interface AdminUser {
   _id: string;
@@ -40,5 +41,9 @@ export class AdminService {
 
   unbanUser(userId: string): Observable<{ success: boolean; message: string; user: AdminUser }> {
     return this.http.post<{ success: boolean; message: string; user: AdminUser }>(`${this.baseUrl}/users/${userId}/unban`, {});
+  }
+
+  getUserTasks(userId: string): Observable<{ success: boolean; tasks: Task[]; streak?: any }> {
+    return this.http.get<{ success: boolean; tasks: Task[]; streak?: any }>(`${this.baseUrl}/users/${userId}/tasks`);
   }
 }

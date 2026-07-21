@@ -1,5 +1,5 @@
 const Task = require("../models/Task");
-const updateStreak = require("../services/streakService");
+const { updateStreak } = require("../services/streakService");
 
 const createTask = async (req, res) => {
   try {

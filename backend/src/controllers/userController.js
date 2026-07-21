@@ -8,14 +8,18 @@ const SavedPost = require("../models/SavedPost");
 const Notification = require("../models/Notification");
 
 const migrateUsernames = require("../utils/migrateUsernames");
+const { checkAndResetStreak } = require("../services/streakService");
 
 const getMyProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-__v");
 
-    const streak = await Streak.findOne({
+    let streak = await Streak.findOne({
       user: user._id,
     });
+    if (streak) {
+      streak = await checkAndResetStreak(streak);
+    }
 
     const totalTasksCompleted = await Task.countDocuments({
       user: user._id,
@@ -200,9 +204,12 @@ const getUserProfile = async (req, res) => {
       });
     }
 
-    const streak = await Streak.findOne({
+    let streak = await Streak.findOne({
       user: user._id,
     });
+    if (streak) {
+      streak = await checkAndResetStreak(streak);
+    }
 
     const totalTasksCompleted = await Task.countDocuments({
       user: user._id,

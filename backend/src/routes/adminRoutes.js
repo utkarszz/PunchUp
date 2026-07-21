@@ -6,6 +6,7 @@ const {
   adminDeleteUser,
   adminBanUser,
   adminUnbanUser,
+  getUserTasksForAdmin,
 } = require("../controllers/adminController");
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.get("/users", getAllUsers);
 router.delete("/users/:userId", adminDeleteUser);
 router.post("/users/:userId/ban", adminBanUser);
 router.post("/users/:userId/unban", adminUnbanUser);
+router.get("/users/:userId/tasks", getUserTasksForAdmin);
 
 module.exports = router;

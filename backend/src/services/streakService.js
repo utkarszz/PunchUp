@@ -52,4 +52,19 @@ const updateStreak = async (userId) => {
   return streak;
 };
 
-module.exports = updateStreak;
+const checkAndResetStreak = async (streak) => {
+  if (!streak) return null;
+  const today = getDateOnly(new Date());
+  const lastDate = getDateOnly(new Date(streak.lastCompletedDate));
+  const diffInDays = (today - lastDate) / (1000 * 60 * 60 * 24);
+  if (diffInDays > 1 && streak.currentStreak > 0) {
+    streak.currentStreak = 0;
+    await streak.save();
+  }
+  return streak;
+};
+
+module.exports = {
+  updateStreak,
+  checkAndResetStreak,
+};

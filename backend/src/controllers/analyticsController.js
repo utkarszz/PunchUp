@@ -1,5 +1,6 @@
 const Task = require("../models/Task");
 const Streak = require("../models/Streak");
+const { checkAndResetStreak } = require("../services/streakService");
 
 const getAnalytics = async (req, res) => {
   try {
@@ -17,9 +18,12 @@ const getAnalytics = async (req, res) => {
       completed: false,
     });
 
-    const streak = await Streak.findOne({
+    let streak = await Streak.findOne({
       user: req.user._id,
     });
+    if (streak) {
+      streak = await checkAndResetStreak(streak);
+    }
 
     const completionRate =
       totalTasks === 0
