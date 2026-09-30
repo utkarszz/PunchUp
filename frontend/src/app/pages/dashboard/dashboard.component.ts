@@ -8,11 +8,12 @@ import { StreakService, StreakData } from '../../core/services/streak.service';
 import { TaskService, Task } from '../../core/services/task.service';
 import { GridService, GridCell } from '../../core/services/grid.service';
 import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.service';
+import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, LeagueBadgeComponent],
   template: `
     <div class="dashboard-container animate-fade-in">
       
@@ -20,7 +21,10 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
       <section class="card welcome-card animate-slide-up" *ngIf="authService.currentUser$ | async as user">
         <div class="welcome-header">
           <div class="welcome-text">
-            <h1>Welcome back, {{ user.displayName || user.username }}</h1>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <h1>Welcome back, {{ user.displayName || user.username }}</h1>
+              <app-league-badge [points]="user.totalPoints || 0"></app-league-badge>
+            </div>
             <p class="subtitle">Here is your consistency overview for today. Keep the streak alive!</p>
           </div>
           <div class="welcome-avatar-wrapper">
@@ -50,6 +54,12 @@ import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.s
             <span class="stat-num">{{ analyticsData?.completedTasks || 0 }}</span>
             <span class="stat-label">Total Tasks Done</span>
             <span class="stat-subtext">completed lifetime</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="dashboard-stat-item">
+            <span class="stat-num">{{ user.totalPoints || 0 }}</span>
+            <span class="stat-label">Productivity Points</span>
+            <span class="stat-subtext">points earned</span>
           </div>
         </div>
       </section>

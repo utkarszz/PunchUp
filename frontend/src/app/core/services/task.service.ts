@@ -12,9 +12,20 @@ export interface Task {
   dueDate?: string;
   completed: boolean;
   completedAt?: string;
+  pointsAwarded?: boolean;
   user: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CompleteTaskResponse {
+  success: boolean;
+  message: string;
+  task: Task;
+  pointsAwarded?: number;
+  newTotalPoints?: number;
+  league?: string;
+  alreadyCompleted?: boolean;
 }
 
 @Injectable({
@@ -44,7 +55,7 @@ export class TaskService {
     return this.http.get<{ success: boolean; count: number; tasks: Task[] }>(`${this.baseUrl}/archived`);
   }
 
-  public completeTask(id: string): Observable<{ success: boolean; message: string; task: Task }> {
-    return this.http.patch<{ success: boolean; message: string; task: Task }>(`${this.baseUrl}/${id}/complete`, {});
+  public completeTask(id: string): Observable<CompleteTaskResponse> {
+    return this.http.patch<CompleteTaskResponse>(`${this.baseUrl}/${id}/complete`, {});
   }
 }

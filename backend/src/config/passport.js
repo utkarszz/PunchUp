@@ -22,6 +22,7 @@ passport.use(
       callbackURL:
         process.env.GOOGLE_CALLBACK_URL ||
         "/api/auth/google/callback",
+      tokenURL: 'https://oauth2.googleapis.com/token',
       scope: ["profile", "email"],
       proxy: true,
     },

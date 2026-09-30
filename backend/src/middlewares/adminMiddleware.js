@@ -1,7 +1,7 @@
-const ADMIN_EMAIL = 'utkarzz1705@gmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'utkarzz1705@gmail.com';
 
 /**
- * Middleware: only allows the designated admin (by email) to proceed.
+ * Middleware: allows access if user has admin role OR matches configured ADMIN_EMAIL.
  * Must be used AFTER the protect middleware so req.user is set.
  */
 const adminOnly = (req, res, next) => {
@@ -9,7 +9,8 @@ const adminOnly = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'Not authenticated' });
   }
 
-  if (req.user.email !== ADMIN_EMAIL) {
+  const isAdmin = req.user.role === 'admin' || req.user.email === ADMIN_EMAIL;
+  if (!isAdmin) {
     return res.status(403).json({ success: false, message: 'Access denied: Admin only' });
   }
 

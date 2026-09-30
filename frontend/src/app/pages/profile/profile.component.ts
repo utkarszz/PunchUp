@@ -8,11 +8,12 @@ import { UploadService } from '../../core/services/upload.service';
 import { StreakService, StreakData } from '../../core/services/streak.service';
 import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.service';
 import { PostService, Post, Comment } from '../../core/services/post.service';
+import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LeagueBadgeComponent],
   template: `
     <div class="profile-page animate-fade-in">
 
@@ -48,7 +49,10 @@ import { PostService, Post, Comment } from '../../core/services/post.service';
           </div>
 
           <div class="hero-identity">
-            <h1 class="display-name">{{ user.displayName || user.username }}</h1>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <h1 class="display-name">{{ user.displayName || user.username }}</h1>
+              <app-league-badge [points]="profileStats?.totalPoints || user.totalPoints || 0"></app-league-badge>
+            </div>
             <span class="username-handle">&#64;{{ user.username }}</span>
             <p class="bio-text" *ngIf="user.bio && !isEditing">{{ user.bio }}</p>
             <p class="bio-text muted" *ngIf="!user.bio && !isEditing">No bio yet. Add one to let others know what you are working on.</p>
@@ -80,6 +84,11 @@ import { PostService, Post, Comment } from '../../core/services/post.service';
           <div class="stat-item">
             <span class="stat-num">{{ analyticsData?.completedTasks || 0 }}</span>
             <span class="stat-label">Tasks Done</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-num">{{ profileStats?.totalPoints || user?.totalPoints || 0 }}</span>
+            <span class="stat-label">Points</span>
           </div>
           <div class="stat-divider"></div>
           <a [routerLink]="['/user', user?.username, 'network']" [queryParams]="{tab:'followers'}" class="stat-item stat-item-link">
@@ -944,7 +953,7 @@ export class ProfileComponent implements OnInit {
   public user: UserProfile | null = null;
   public streakData: StreakData | null = null;
   public analyticsData: AnalyticsData | null = null;
-  public profileStats: { followers: number; following: number } | null = null;
+  public profileStats: { followers: number; following: number; totalPoints?: number; league?: string } | null = null;
 
   public displayName = '';
   public username = '';
@@ -975,13 +984,15 @@ export class ProfileComponent implements OnInit {
         this.displayName = u.displayName || '';
         this.username = u.username || '';
         this.bio = u.bio || '';
-        // Load followers/following counts
+        // Load followers/following counts & stats
         this.userService.getUserProfile(u.username).subscribe({
           next: res => {
             if (res.success && res.profile) {
               this.profileStats = {
                 followers: res.profile.stats.followers || 0,
-                following: res.profile.stats.following || 0
+                following: res.profile.stats.following || 0,
+                totalPoints: res.profile.stats.totalPoints || 0,
+                league: res.profile.stats.league || 'Rookie'
               };
             }
           },

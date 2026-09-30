@@ -16,6 +16,7 @@ const postRoutes = require("./routes/postRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const followRoutes = require("./routes/followRoutes");
 const searchRoutes = require("./routes/searchRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
 
 const app = express();
 app.set('trust proxy', true);
@@ -37,9 +38,24 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+// ── Security Headers ──────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Limit body size to 2MB to prevent memory exhaustion attacks
+app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 app.use(passport.initialize());
+
+// Rate limiters
+const { apiLimiter, authLimiter } = require('./middlewares/rateLimitMiddleware');
+app.use('/api/', apiLimiter);
+app.use('/api/auth', authLimiter);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 // Mounted BEFORE all API routes so it is always reachable by uptime monitors.
@@ -64,6 +80,7 @@ app.use(
   followRoutes
 );
 app.use("/api/search", searchRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
@@ -77,5 +94,33 @@ const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/test', testRoute);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+
+// ── Centralized Error Handling Middleware ────────────────────────────────────
+// Suppresses stack traces and sensitive error details in production
+app.use((err, req, res, next) => {
+  // CORS block error
+  if (err.message && err.message.startsWith('CORS blocked')) {
+    return res.status(403).json({ success: false, message: 'Forbidden: CORS origin not allowed' });
+  }
+
+  // Multer upload limit error
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ success: false, message: 'File is too large. Maximum size is 5MB.' });
+  }
+
+  // Mongoose CastError (invalid ObjectId format)
+  if (err.name === 'CastError') {
+    return res.status(400).json({ success: false, message: 'Invalid ID format provided' });
+  }
+
+  // Log error internally for debugging
+  console.error('[App Error]', err.message);
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  return res.status(err.status || 500).json({
+    success: false,
+    message: isProduction ? 'An unexpected server error occurred.' : (err.message || 'Internal Server Error'),
+  });
+});
 
 module.exports = app;

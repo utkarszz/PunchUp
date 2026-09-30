@@ -3,6 +3,14 @@ const router = express.Router();
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
+// Gate all test/dev routes: NEVER accessible in production unless explicitly enabled
+router.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEV_LOGIN !== 'true') {
+    return res.status(404).json({ success: false, message: 'Not found' });
+  }
+  next();
+});
+
 router.get('/', (req, res) => {
   res.json({
     success: true,
@@ -67,6 +75,29 @@ router.get('/login-mock', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// One-click dev login that redirects directly into the app
+router.get('/dev-login', async (req, res) => {
+  try {
+    const email = req.query.email || 'utkarzz1705@gmail.com';
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        googleId: 'dev-google-id-' + Date.now(),
+        displayName: 'Utkarsh Singh',
+        username: 'utkarzz',
+        email: email,
+        profilePicture: 'https://api.dicebear.com/7.x/bottts/svg?seed=utkarzz',
+        isOnboarded: true,
+      });
+    }
+    const token = generateToken(user._id);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:4200";
+    return res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

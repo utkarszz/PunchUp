@@ -69,15 +69,18 @@ export class AuthCallbackComponent implements OnInit {
     this.route.queryParams.subscribe((params: any) => {
       const token = params['token'];
       if (token) {
+        if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
         this.authService.handleOAuthCallback(token).subscribe({
           error: () => {
             console.error('Authentication failed during callback');
-            this.router.navigate(['/login']);
+            this.router.navigate(['/login'], { replaceUrl: true });
           }
         });
       } else {
         console.warn('No token found in callback URL');
-        this.router.navigate(['/login']);
+        this.router.navigate(['/login'], { replaceUrl: true });
       }
     });
   }

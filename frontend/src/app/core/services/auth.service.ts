@@ -14,6 +14,8 @@ export interface UserProfile {
   profilePicture?: string;
   bio?: string;
   isOnboarded?: boolean;
+  totalPoints?: number;
+  role?: string;
 }
 
 @Injectable({
@@ -63,9 +65,9 @@ export class AuthService {
     return this.loadCurrentUser().pipe(
       tap((user) => {
         if (user && user.isOnboarded === false) {
-          this.router.navigate(['/onboarding']);
+          this.router.navigate(['/onboarding'], { replaceUrl: true });
         } else {
-          this.router.navigate(['/community']);
+          this.router.navigate(['/community'], { replaceUrl: true });
         }
       })
     );

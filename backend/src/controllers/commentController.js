@@ -64,7 +64,7 @@ const getComments = async (
       })
         .populate(
           "user",
-          "username displayName profilePicture"
+          "username displayName profilePicture totalPoints"
         )
         .sort({
           createdAt: -1,

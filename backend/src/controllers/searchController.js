@@ -13,17 +13,20 @@ const searchCommunity = async (req, res) => {
       });
     }
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
+    // Escape regex special characters to prevent ReDoS and query crashes
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const cleanQuery = query.replace(/^#/, "");
+    const safeQuery = escapeRegex(cleanQuery);
 
     // 1. Users matching display name or username
     const users = await User.find({
       $or: [
-        { username: { $regex: cleanQuery, $options: "i" } },
-        { displayName: { $regex: cleanQuery, $options: "i" } }
+        { username: { $regex: safeQuery, $options: "i" } },
+        { displayName: { $regex: safeQuery, $options: "i" } }
       ]
     })
       .select("username displayName profilePicture bio")
@@ -31,8 +34,9 @@ const searchCommunity = async (req, res) => {
       .skip(skip);
 
     // 2. Posts matching content text
+    const safeFullQuery = escapeRegex(query);
     const posts = await Post.find({
-      content: { $regex: query, $options: "i" }
+      content: { $regex: safeFullQuery, $options: "i" }
     })
       .populate("user", "username displayName profilePicture")
       .sort({ createdAt: -1 })
@@ -40,7 +44,7 @@ const searchCommunity = async (req, res) => {
       .skip(skip);
 
     // 3. Hashtags extracted from matching post contents
-    const hashtagRegex = new RegExp(`#\\w*${cleanQuery}\\w*`, "i");
+    const hashtagRegex = new RegExp(`#\\w*${safeQuery}\\w*`, "i");
     const postsWithHashtags = await Post.find({
       content: { $regex: hashtagRegex }
     }).select("content");

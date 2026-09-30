@@ -6,13 +6,14 @@ import { PostService, Post, Comment } from '../../core/services/post.service';
 import { FollowService, FollowUser } from '../../core/services/follow.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UploadService } from '../../core/services/upload.service';
+import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-community',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LeagueBadgeComponent],
   template: `
     <div class="community-container animate-fade-in">
 
@@ -215,7 +216,10 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=u'"
                 />
                 <div class="post-author-info">
-                  <span class="post-display-name">{{ post.user.displayName || post.user.username }}</span>
+                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                    <span class="post-display-name">{{ post.user.displayName || post.user.username }}</span>
+                    <app-league-badge [points]="post.user.totalPoints || 0"></app-league-badge>
+                  </div>
                   <span class="post-username">&#64;{{ post.user.username }}</span>
                 </div>
               </a>
@@ -263,7 +267,10 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   />
                   <div class="comment-body" style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                      <span class="comment-author">{{ c.user.displayName || c.user.username }}</span>
+                      <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                        <span class="comment-author">{{ c.user.displayName || c.user.username }}</span>
+                        <app-league-badge [points]="c.user.totalPoints || 0"></app-league-badge>
+                      </div>
                       <button 
                         *ngIf="c.user._id === currentUserId || post.user._id === currentUserId" 
                         class="btn-icon delete-comment-btn" 
@@ -1244,7 +1251,8 @@ export class CommunityComponent implements OnInit, OnDestroy {
           _id: me?._id || '',
           username: me?.username || '',
           displayName: me?.displayName || '',
-          profilePicture: me?.profilePicture || ''
+          profilePicture: me?.profilePicture || '',
+          totalPoints: me?.totalPoints || 0
         }
       };
       this.commentMap[post._id].push(enrichedComment);
@@ -1302,7 +1310,8 @@ export class CommunityComponent implements OnInit, OnDestroy {
             _id: me?._id || '',
             username: me?.username || '',
             displayName: me?.displayName || '',
-            profilePicture: me?.profilePicture || ''
+            profilePicture: me?.profilePicture || '',
+            totalPoints: me?.totalPoints || 0
           }
         };
         this.posts.unshift(enrichedPost);

@@ -6,9 +6,11 @@ const Follow = require("../models/Follow");
 const Comment = require("../models/Comment");
 const SavedPost = require("../models/SavedPost");
 const Notification = require("../models/Notification");
+const PointEvent = require("../models/PointEvent");
 
 const migrateUsernames = require("../utils/migrateUsernames");
 const { checkAndResetStreak } = require("../services/streakService");
+const { getLeague } = require("../services/pointService");
 
 const getMyProfile = async (req, res) => {
   try {
@@ -46,6 +48,8 @@ const getMyProfile = async (req, res) => {
           currentStreak: streak?.currentStreak || 0,
           longestStreak: streak?.longestStreak || 0,
           totalTasksCompleted,
+          totalPoints: user.totalPoints || 0,
+          league: getLeague(user.totalPoints || 0),
           posts: postsCount,
           postsCount,
           followers: followersCount,
@@ -157,6 +161,7 @@ const deleteAccount = async (req, res) => {
     await SavedPost.deleteMany({ user: userId });
     await Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] });
     await Notification.deleteMany({ $or: [{ recipient: userId }, { sender: userId }] });
+    await PointEvent.deleteMany({ user: userId });
 
     res.status(200).json({
       success: true,
@@ -195,7 +200,7 @@ const getUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({
       username: req.params.username.toLowerCase(),
-    }).select("-__v -googleId");
+    }).select("username displayName profilePicture bio totalPoints createdAt");
 
     if (!user) {
       return res.status(404).json({
@@ -236,6 +241,8 @@ const getUserProfile = async (req, res) => {
           currentStreak: streak?.currentStreak || 0,
           longestStreak: streak?.longestStreak || 0,
           totalTasksCompleted,
+          totalPoints: user.totalPoints || 0,
+          league: getLeague(user.totalPoints || 0),
           posts: postsCount,
           postsCount,
           followers: followersCount,
@@ -273,9 +280,12 @@ const searchUsers = async (req, res) => {
       });
     }
 
+    // Escape regex special characters to prevent ReDoS
+    const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const users = await User.find({
       username: {
-        $regex: query,
+        $regex: safeQuery,
         $options: "i",
       },
     })

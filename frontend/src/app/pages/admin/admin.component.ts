@@ -64,7 +64,7 @@ import { ToastService } from '../../core/services/toast.service';
                   <a [routerLink]="['/user', u.username]" class="user-cell-link">
                     <div class="user-cell">
                       <img [src]="u.profilePicture || 'assets/default-avatar.png'" 
-                           onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=' + u.username" 
+                           onerror="this.src='assets/default-avatar.png'" 
                            alt="Avatar" class="avatar" />
                       <div class="user-info">
                         <span class="display-name">{{ u.displayName || u.username }}</span>

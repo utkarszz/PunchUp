@@ -12,6 +12,7 @@ export interface Post {
     username: string;
     displayName?: string;
     profilePicture?: string;
+    totalPoints?: number;
   };
   likes: string[];
   saves: string[];
@@ -27,6 +28,7 @@ export interface Comment {
     username: string;
     displayName?: string;
     profilePicture?: string;
+    totalPoints?: number;
   };
   createdAt: string;
 }

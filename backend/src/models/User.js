@@ -4,7 +4,8 @@ const userSchema = new mongoose.Schema(
   {
     googleId: {
       type: String,
-      default: null
+      default: null,
+      select: false,
     },
     displayName: {
       type: String,
@@ -55,7 +56,13 @@ const userSchema = new mongoose.Schema(
     banReason: {
       type: String,
       default: ''
-    }
+    },
+
+    totalPoints: {
+      type: Number,
+      default: 0,
+      index: -1,
+    },
   },
   {
     timestamps: true

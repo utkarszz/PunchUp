@@ -12,7 +12,7 @@ export const adminGuard: CanActivateFn = (route, state) => {
     take(1),
     map(() => {
       const user = authService.currentUserValue;
-      if (user && user.email === 'utkarzz1705@gmail.com') {
+      if (user && (user.role === 'admin' || user.email === 'utkarzz1705@gmail.com')) {
         return true;
       }
       router.navigate(['/dashboard']);

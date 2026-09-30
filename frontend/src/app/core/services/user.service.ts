@@ -8,6 +8,8 @@ export interface UserProfileStats {
   currentStreak: number;
   longestStreak: number;
   totalTasksCompleted: number;
+  totalPoints?: number;
+  league?: string;
   posts: number;
   followers: number;
   following: number;

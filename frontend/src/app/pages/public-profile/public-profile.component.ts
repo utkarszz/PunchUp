@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { PostService, Post, Comment } from '../../core/services/post.service';
 import { AdminService } from '../../core/services/admin.service';
 import { Task } from '../../core/services/task.service';
+import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
 
 interface GridDisplayCell {
   date: string;
@@ -19,7 +20,7 @@ interface GridDisplayCell {
 @Component({
   selector: 'app-public-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, LeagueBadgeComponent],
   template: `
     <div class="public-profile-container animate-fade-in">
       <!-- Loading State -->
@@ -56,8 +57,9 @@ interface GridDisplayCell {
               />
             </div>
             <div class="user-meta">
-              <div class="name-row">
+              <div class="name-row" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <h2>{{ profile.user.displayName || profile.user.username }}</h2>
+                <app-league-badge [points]="profile.stats.totalPoints || profile.user.totalPoints || 0"></app-league-badge>
                 <span class="handle-badge">&#64;{{ profile.user.username }}</span>
               </div>
               <p class="email" *ngIf="isMe && profile.user.email">{{ profile.user.email }}</p>
@@ -102,6 +104,11 @@ interface GridDisplayCell {
           <div class="card metric-card">
             <span class="metric-label">Tasks Completed</span>
             <span class="metric-value text-success">{{ profile.stats.totalTasksCompleted || 0 }} done</span>
+          </div>
+
+          <div class="card metric-card">
+            <span class="metric-label">Points & League</span>
+            <span class="metric-value text-accent">{{ profile.stats.totalPoints || 0 }} pts</span>
           </div>
         </div>
 

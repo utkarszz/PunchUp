@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Post = require("../models/Post");
 const User = require("../models/User");
 const Follow = require("../models/Follow");
@@ -28,14 +29,14 @@ const createPost = async (req, res) => {
 
 const getPosts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
     const totalPosts = await Post.countDocuments();
 
     const posts = await Post.find()
-      .populate("user", "username displayName profilePicture")
+      .populate("user", "username displayName profilePicture totalPoints")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -58,8 +59,8 @@ const getPosts = async (req, res) => {
 
 const getFeed = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
     // Get following users
@@ -72,7 +73,7 @@ const getFeed = async (req, res) => {
     const totalFeedPosts = await Post.countDocuments({ user: { $in: followingIds } });
 
     const posts = await Post.find({ user: { $in: followingIds } })
-      .populate("user", "username displayName profilePicture")
+      .populate("user", "username displayName profilePicture totalPoints")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -94,9 +95,16 @@ const getFeed = async (req, res) => {
 
 const getPostById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post ID format",
+      });
+    }
+
     const post = await Post.findById(req.params.id).populate(
       "user",
-      "username displayName profilePicture"
+      "username displayName profilePicture totalPoints"
     );
 
     if (!post) {
@@ -120,8 +128,8 @@ const getPostById = async (req, res) => {
 
 const getUserPosts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
     const user = await User.findOne({
@@ -142,7 +150,7 @@ const getUserPosts = async (req, res) => {
     const posts = await Post.find({
       user: user._id,
     })
-      .populate("user", "username displayName profilePicture")
+      .populate("user", "username displayName profilePicture totalPoints")
       .sort({
         createdAt: -1,
       })
@@ -356,8 +364,8 @@ const unsavePost = async (req, res) => {
 
 const getSavedPosts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
     const totalSaved = await SavedPost.countDocuments({ user: req.user._id });
@@ -367,7 +375,7 @@ const getSavedPosts = async (req, res) => {
         path: "post",
         populate: {
           path: "user",
-          select: "username displayName profilePicture",
+          select: "username displayName profilePicture totalPoints",
         },
       })
       .sort({ createdAt: -1 })
