@@ -7,6 +7,7 @@ import { AuthService } from './core/services/auth.service';
 import { BackendWakeupService } from './core/services/backend-wakeup.service';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ThemeService } from './core/services/theme.service';
+import { NotificationService } from './core/services/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -19,6 +20,7 @@ export class AppComponent implements OnInit {
   public authService = inject(AuthService);
   public wakeupService = inject(BackendWakeupService);
   public themeService = inject(ThemeService);
+  public notificationService = inject(NotificationService);
   private router = inject(Router);
   public isDarkMode$ = this.themeService.isDarkMode$;
 
@@ -30,7 +32,18 @@ export class AppComponent implements OnInit {
     return this.isAuthenticated && user?.isOnboarded !== false;
   }
 
+  public unreadCount = 0;
+
+  public get displayUnreadCount(): string {
+    if (this.unreadCount <= 0) return '';
+    return this.unreadCount > 99 ? '99+' : String(this.unreadCount);
+  }
+
   ngOnInit() {
+    this.notificationService.unreadCount$.subscribe(count => {
+      this.unreadCount = count;
+    });
+
     this.authService.currentUser$.subscribe(user => {
       this.isAuthenticated = !!user;
       if (user && user.isOnboarded === false) {
@@ -38,6 +51,14 @@ export class AppComponent implements OnInit {
         if (currentUrl !== '/onboarding' && currentUrl !== '/login') {
           this.router.navigate(['/onboarding']);
         }
+      }
+      // Fetch unread notification count and start polling when user is authenticated
+      if (user && user.isOnboarded !== false) {
+        this.notificationService.fetchUnreadCount();
+        this.notificationService.startPolling();
+      } else {
+        this.notificationService.stopPolling();
+        this.notificationService.setUnreadCount(0);
       }
     });
 

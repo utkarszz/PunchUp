@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 interface NavItem {
   label: string;
@@ -36,7 +37,13 @@ interface NavItem {
            [routerLinkActiveOptions]="{ exact: item.route === '/' || item.route === '/dashboard' }"
            class="nav-item"
            [title]="isCollapsed ? item.label : ''">
-          <span class="nav-icon" [innerHTML]="item.iconSvg"></span>
+          <span class="nav-icon-wrap">
+            <span class="nav-icon" [innerHTML]="item.iconSvg"></span>
+            <span class="sidebar-unread-badge"
+                  *ngIf="item.route === '/notifications' && unreadCount > 0">
+              {{ displayUnreadCount }}
+            </span>
+          </span>
           <span class="nav-label" *ngIf="!isCollapsed">{{ item.label }}</span>
         </a>
       </nav>
@@ -189,6 +196,47 @@ interface NavItem {
       box-shadow: inset 0 0 0 1px rgba(199,199,204,0.04);
     }
 
+    .nav-icon-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-unread-badge {
+      position: absolute;
+      top: -5px;
+      right: -8px;
+      height: 15px;
+      min-width: 15px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--surface);
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.45);
+      pointer-events: none;
+      z-index: 2;
+      font-family: var(--font-sans);
+      white-space: nowrap;
+    }
+
+    .nav-item:hover .sidebar-unread-badge {
+      border-color: var(--surface-hover);
+    }
+
+    :host-context(.light-mode) .sidebar-unread-badge,
+    :root.light-mode .sidebar-unread-badge {
+      border-color: #ffffff;
+    }
+
     .nav-icon {
       display: inline-flex;
       align-items: center;
@@ -300,9 +348,16 @@ interface NavItem {
 export class SidebarComponent implements OnInit {
   public authService = inject(AuthService);
   public themeService = inject(ThemeService);
+  public notificationService = inject(NotificationService);
   private router = inject(Router);
 
   public isCollapsed = false;
+  public unreadCount = 0;
+
+  public get displayUnreadCount(): string {
+    if (this.unreadCount <= 0) return '';
+    return this.unreadCount > 99 ? '99+' : String(this.unreadCount);
+  }
 
   public navItems: NavItem[] = [
     {
@@ -332,7 +387,7 @@ export class SidebarComponent implements OnInit {
       iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>`
     },
     {
-      label: 'Notifications',
+      label: 'Inbox',
       route: '/notifications',
       iconSvg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`
     },
@@ -356,6 +411,10 @@ export class SidebarComponent implements OnInit {
   public visibleNavItems: NavItem[] = [];
 
   ngOnInit() {
+    this.notificationService.unreadCount$.subscribe(count => {
+      this.unreadCount = count;
+    });
+
     const collapsedPreference = localStorage.getItem('sidebar_collapsed');
     this.isCollapsed = collapsedPreference === 'true';
 
