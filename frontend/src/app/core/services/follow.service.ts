@@ -30,11 +30,11 @@ export class FollowService {
     return this.http.get<{ success: boolean; users: FollowUser[] }>(url);
   }
 
-  getFollowers(username: string): Observable<{ success: boolean; followers: FollowUser[] }> {
-    return this.http.get<{ success: boolean; followers: FollowUser[] }>(`${this.base}/follows/followers/${username}`);
+  getFollowers(username: string, page: number = 1, limit: number = 100): Observable<{ success: boolean; followers: FollowUser[] }> {
+    return this.http.get<{ success: boolean; followers: FollowUser[] }>(`${this.base}/follows/followers/${username}?page=${page}&limit=${limit}`);
   }
 
-  getFollowing(username: string): Observable<{ success: boolean; following: FollowUser[] }> {
-    return this.http.get<{ success: boolean; following: FollowUser[] }>(`${this.base}/follows/following/${username}`);
+  getFollowing(username: string, page: number = 1, limit: number = 100): Observable<{ success: boolean; following: FollowUser[] }> {
+    return this.http.get<{ success: boolean; following: FollowUser[] }>(`${this.base}/follows/following/${username}?page=${page}&limit=${limit}`);
   }
 }

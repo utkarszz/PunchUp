@@ -6,6 +6,7 @@ import { PostService, Post, Comment } from '../../core/services/post.service';
 import { FollowService, FollowUser } from '../../core/services/follow.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UploadService } from '../../core/services/upload.service';
+import { ToastService } from '../../core/services/toast.service';
 import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -208,21 +209,41 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
         <div class="feed-list" *ngIf="!isLoading && posts.length > 0">
           <article class="card post-card animate-slide-up" *ngFor="let post of posts; let i = index">
             <div class="post-header">
-              <a [routerLink]="['/user', post.user.username]" class="post-author-link">
-                <img
-                  [src]="post.user.profilePicture || 'assets/default-avatar.png'"
-                  class="post-avatar"
-                  [alt]="post.user.username"
-                  onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=u'"
-                />
+              <div class="post-author-wrapper">
+                <a [routerLink]="['/user', post.user.username]" class="post-avatar-link">
+                  <img
+                    [src]="post.user.profilePicture || 'assets/default-avatar.png'"
+                    class="post-avatar"
+                    [alt]="post.user.username"
+                    onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=u'"
+                  />
+                </a>
                 <div class="post-author-info">
-                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
-                    <span class="post-display-name">{{ post.user.displayName || post.user.username }}</span>
+                  <div class="post-author-main">
+                    <a [routerLink]="['/user', post.user.username]" class="post-display-name-link">
+                      <span class="post-display-name">{{ post.user.displayName || post.user.username }}</span>
+                    </a>
                     <app-league-badge [points]="post.user.totalPoints || 0"></app-league-badge>
+                    <button
+                      *ngIf="!isOwnPost(post)"
+                      type="button"
+                      class="post-follow-btn"
+                      [class.following]="isFollowing(post.user.username)"
+                      [class.loading]="isFollowLoading(post.user.username)"
+                      [disabled]="isFollowLoading(post.user.username)"
+                      (click)="toggleFollow(post.user.username, $event)"
+                      [title]="isFollowing(post.user.username) ? 'Click to unfollow' : 'Follow @' + post.user.username"
+                      [attr.aria-label]="isFollowing(post.user.username) ? 'Unfollow ' + post.user.username : 'Follow ' + post.user.username"
+                    >
+                      <span class="follow-spinner" *ngIf="isFollowLoading(post.user.username)"></span>
+                      <span>{{ isFollowing(post.user.username) ? 'Following' : 'Follow' }}</span>
+                    </button>
                   </div>
-                  <span class="post-username">&#64;{{ post.user.username }}</span>
+                  <a [routerLink]="['/user', post.user.username]" class="post-handle-link">
+                    <span class="post-username">&#64;{{ post.user.username }}</span>
+                  </a>
                 </div>
-              </a>
+              </div>
               <span class="post-time">{{ getRelativeTime(post.createdAt) }}</span>
             </div>
 
@@ -335,11 +356,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               </a>
               <button
                 class="btn btn-sm"
-                [class.btn-primary]="!followingSet.has(user.username)"
-                [class.btn-secondary]="followingSet.has(user.username)"
-                (click)="toggleFollow(user)"
+                [class.btn-primary]="!isFollowing(user.username)"
+                [class.btn-secondary]="isFollowing(user.username)"
+                [disabled]="isFollowLoading(user.username)"
+                (click)="toggleFollow(user, $event)"
               >
-                {{ followingSet.has(user.username) ? 'Following' : 'Follow' }}
+                {{ isFollowing(user.username) ? 'Following' : 'Follow' }}
               </button>
             </div>
             <p class="no-suggestions" *ngIf="suggestions.length === 0">No suggestions right now.</p>
@@ -753,14 +775,23 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
     .post-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
+      gap: 0.75rem;
     }
 
-    .post-author-link {
+    .post-author-wrapper {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .post-avatar-link {
+      display: flex;
+      flex-shrink: 0;
+      text-decoration: none;
     }
 
     .post-avatar {
@@ -769,28 +800,177 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       border-radius: 50%;
       border: 1px solid var(--border-hover);
       object-fit: cover;
+      flex-shrink: 0;
     }
 
     .post-author-info {
       display: flex;
       flex-direction: column;
+      min-width: 0;
+      gap: 2px;
+    }
+
+    .post-author-main {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .post-display-name-link {
+      text-decoration: none;
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
     }
 
     .post-display-name {
       font-size: 0.9375rem;
       font-weight: 600;
       color: var(--text-primary);
+      transition: color 0.15s ease;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .post-display-name-link:hover .post-display-name {
+      color: var(--primary-hover);
+    }
+
+    /* Post Follow Button — Linear-inspired compact pill */
+    .post-follow-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 18px;
+      min-height: 18px;
+      max-height: 18px;
+      padding: 0 7px;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      font-family: var(--font-sans);
+      white-space: nowrap;
+      user-select: none;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+      box-sizing: border-box;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .post-follow-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-glow, rgba(199, 199, 204, 0.3));
+      color: #ffffff;
+      box-shadow: 0 0 8px rgba(199, 199, 204, 0.12);
+    }
+
+    .post-follow-btn:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
+    /* Following state */
+    .post-follow-btn.following {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text-secondary);
+    }
+
+    .post-follow-btn.following:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+      box-shadow: none;
+    }
+
+    /* Loading state */
+    .post-follow-btn.loading,
+    .post-follow-btn:disabled {
+      opacity: 0.65;
+      cursor: wait;
+      pointer-events: none;
+    }
+
+    .follow-spinner {
+      width: 8px;
+      height: 8px;
+      border: 1.5px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: follow-spin 0.6s linear infinite;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    @keyframes follow-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .post-handle-link {
+      text-decoration: none;
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
     }
 
     .post-username {
       font-size: 0.75rem;
       color: var(--text-muted);
+      transition: color 0.15s ease;
+    }
+
+    .post-handle-link:hover .post-username {
+      color: var(--text-secondary);
     }
 
     .post-time {
       font-size: 0.75rem;
       color: var(--text-muted);
       flex-shrink: 0;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    /* Light mode support */
+    :host-context(.light-mode) .post-follow-btn,
+    :root.light-mode .post-follow-btn {
+      background: rgba(0, 0, 0, 0.04);
+      border-color: rgba(0, 0, 0, 0.12);
+      color: var(--text-primary);
+    }
+
+    :host-context(.light-mode) .post-follow-btn:hover:not(:disabled),
+    :root.light-mode .post-follow-btn:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.07);
+      border-color: rgba(0, 0, 0, 0.2);
+      color: var(--text-primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    :host-context(.light-mode) .post-follow-btn.following,
+    :root.light-mode .post-follow-btn.following {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+
+    :host-context(.light-mode) .post-follow-btn.following:hover:not(:disabled),
+    :root.light-mode .post-follow-btn.following:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.04);
+      border-color: var(--border-hover);
+      color: var(--text-primary);
     }
 
     .post-content {
@@ -1037,6 +1217,45 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
         gap: 1.25rem;
       }
     }
+
+    @media (max-width: 480px) {
+      .community-container {
+        padding: 1rem 0.625rem;
+        gap: 1rem;
+      }
+      .post-card {
+        padding: 1.125rem 0.875rem;
+      }
+      .post-author-wrapper {
+        gap: 0.5rem;
+      }
+      .post-avatar {
+        width: 34px;
+        height: 34px;
+      }
+      .post-author-main {
+        gap: 0.3rem;
+      }
+      .post-display-name {
+        font-size: 0.875rem;
+        max-width: 120px;
+      }
+      .post-time {
+        font-size: 0.6875rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .community-container {
+        padding: 0.75rem 0.375rem;
+      }
+      .post-card {
+        padding: 0.875rem 0.625rem;
+      }
+      .post-display-name {
+        max-width: 85px;
+      }
+    }
   `]
 })
 export class CommunityComponent implements OnInit, OnDestroy {
@@ -1044,12 +1263,14 @@ export class CommunityComponent implements OnInit, OnDestroy {
   private postService = inject(PostService);
   private followService = inject(FollowService);
   private uploadService = inject(UploadService);
+  private toastService = inject(ToastService);
 
   posts: Post[] = [];
   suggestions: FollowUser[] = [];
   commentMap: Record<string, Comment[]> = {};
   commentDraft: Record<string, string> = {};
   followingSet = new Set<string>();
+  followLoadingSet = new Set<string>();
 
   newPostContent = '';
   openCommentPostId: string | null = null;
@@ -1082,13 +1303,13 @@ export class CommunityComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.subscribe(u => {
       if (u) {
         this.currentUserId = u._id;
-        this.followService.getFollowing(u.username).subscribe({
+        this.followService.getFollowing(u.username, 1, 200).subscribe({
           next: (res) => {
             if (res.success && res.following) {
               res.following.forEach(f => {
                 const followedUser = f.following || f;
                 if (followedUser && followedUser.username) {
-                  this.followingSet.add(followedUser.username);
+                  this.followingSet.add(followedUser.username.toLowerCase());
                 }
               });
             }
@@ -1323,14 +1544,78 @@ export class CommunityComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleFollow(user: FollowUser) {
-    if (this.followingSet.has(user.username)) {
-      this.followService.unfollow(user.username).subscribe();
-      this.followingSet.delete(user.username);
-    } else {
-      this.followService.follow(user.username).subscribe();
-      this.followingSet.add(user.username);
+  isFollowing(username?: string): boolean {
+    if (!username) return false;
+    return this.followingSet.has(username.toLowerCase());
+  }
+
+  isFollowLoading(username?: string): boolean {
+    if (!username) return false;
+    return this.followLoadingSet.has(username.toLowerCase());
+  }
+
+  isOwnPost(post: Post): boolean {
+    if (!post?.user) return false;
+    const me = this.authService.currentUserValue;
+    if (this.currentUserId && post.user._id && this.currentUserId === post.user._id) {
+      return true;
     }
+    if (me?.username && post.user.username && me.username.toLowerCase() === post.user.username.toLowerCase()) {
+      return true;
+    }
+    return false;
+  }
+
+  toggleFollow(target: FollowUser | string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+
+    const username = typeof target === 'string' ? target : target?.username;
+    if (!username) return;
+
+    const normalized = username.toLowerCase();
+    const me = this.authService.currentUserValue;
+    if (me?.username && me.username.toLowerCase() === normalized) {
+      return;
+    }
+
+    if (this.followLoadingSet.has(normalized)) {
+      return;
+    }
+
+    const wasFollowing = this.followingSet.has(normalized);
+
+    // Optimistic update
+    if (wasFollowing) {
+      this.followingSet.delete(normalized);
+    } else {
+      this.followingSet.add(normalized);
+    }
+    this.followLoadingSet.add(normalized);
+
+    const request$ = wasFollowing
+      ? this.followService.unfollow(username)
+      : this.followService.follow(username);
+
+    request$.subscribe({
+      next: () => {
+        this.followLoadingSet.delete(normalized);
+      },
+      error: (err) => {
+        this.followLoadingSet.delete(normalized);
+        // Rollback optimistic state
+        if (wasFollowing) {
+          this.followingSet.add(normalized);
+        } else {
+          this.followingSet.delete(normalized);
+        }
+        const action = wasFollowing ? 'unfollow' : 'follow';
+        const msg = err?.error?.message || `Failed to ${action} @${username}. Please try again.`;
+        this.toastService.showError(msg);
+      }
+    });
   }
 
   getRelativeTime(dateStr: string): string {
