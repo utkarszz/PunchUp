@@ -125,7 +125,7 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
           </div>
           
           <div class="tasks-list" *ngIf="todayTasks.length > 0; else noTasks">
-            <div *ngFor="let task of todayTasks" class="task-item" [class.completed]="task.completed">
+            <div *ngFor="let task of todayTasks" class="task-item" [class.completed]="task.completed" [class.overdue]="isOverdue(task)">
               <label class="checkbox-container">
                 <input 
                   type="checkbox" 
@@ -136,9 +136,10 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
                 <span class="checkmark"></span>
               </label>
               <div class="task-details">
-                <span class="task-title">{{ task.title }}</span>
+                <span class="task-title" [class.text-overdue]="isOverdue(task)">{{ task.title }}</span>
                 <span class="task-category-badge" *ngIf="task.category">{{ task.category }}</span>
               </div>
+              <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
               <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
             </div>
           </div>
@@ -396,6 +397,31 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
       opacity: 0.5;
     }
 
+    .task-item.overdue {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.04) 0%, rgba(9, 9, 11, 0.2) 100%);
+    }
+
+    .task-item.overdue:hover {
+      border-color: rgba(239, 68, 68, 0.6);
+    }
+
+    .text-overdue {
+      color: var(--danger, #ef4444) !important;
+    }
+
+    .overdue-tag {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #fff;
+      background: var(--danger, #ef4444);
+      border-radius: 4px;
+      padding: 0.125rem 0.45rem;
+      line-height: 1.3;
+    }
+
     .checkbox-container {
       display: block;
       position: relative;
@@ -612,12 +638,13 @@ export class DashboardComponent implements OnInit {
         }
         if (res.tasks && res.tasks.success) {
           const allTasks: Task[] = res.tasks.tasks || [];
-          // Filter tasks due today
+          // Include overdue tasks and tasks due today
           const todayStr = new Date().toDateString();
           this.todayTasks = allTasks.filter(t => {
             if (t.completed) return false; // Only show pending
             if (!t.dueDate) return true; // Show anytime tasks
-            return new Date(t.dueDate).toDateString() === todayStr;
+            const dueDate = new Date(t.dueDate);
+            return dueDate.getTime() < Date.now() || dueDate.toDateString() === todayStr;
           });
         }
         if (res.grid && res.grid.success) {
@@ -627,6 +654,11 @@ export class DashboardComponent implements OnInit {
         }
       }
     });
+  }
+
+  isOverdue(task: Task): boolean {
+    if (!task || task.completed || !task.dueDate) return false;
+    return new Date(task.dueDate).getTime() < Date.now();
   }
 
   onToggleComplete(task: Task) {

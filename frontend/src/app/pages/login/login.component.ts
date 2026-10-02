@@ -21,6 +21,11 @@ import { AuthService } from '../../core/services/auth.service';
           <p>Sign in with your Google account to track tasks, build streaks, and visualize your progress.</p>
         </div>
 
+        <!-- Error message banner -->
+        <div class="error-banner" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
         <!-- Google OAuth Button -->
         <button (click)="onGoogleLogin()" [disabled]="isLoading" class="btn btn-primary login-btn">
           <svg class="google-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -117,6 +122,17 @@ import { AuthService } from '../../core/services/auth.service';
       cursor: not-allowed;
     }
 
+    .error-banner {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.8125rem;
+      color: var(--danger, #ef4444);
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
     .google-icon {
       flex-shrink: 0;
     }
@@ -133,6 +149,7 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
 
   public isLoading = false;
+  public errorMessage = '';
 
   ngOnInit() {
     // If user is already authenticated, send them to community feed immediately
@@ -144,6 +161,12 @@ export class LoginComponent implements OnInit {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('token')) {
       this.isLoading = true;
+    }
+
+    const error = urlParams.get('error');
+    if (error) {
+      this.errorMessage = urlParams.get('msg') || 'Authentication failed. Please try again.';
+      this.isLoading = false;
     }
   }
 

@@ -6,6 +6,10 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 5000,
     });
     console.log('MongoDB connected');
+    const migrateTaskDueDates = require('../utils/migrateTaskDueDates');
+    migrateTaskDueDates().catch(err => {
+      console.error('Task due-date migration error:', err.message);
+    });
   } catch(error){
     console.error('MongoDB connection error:');
     console.error(error.message);

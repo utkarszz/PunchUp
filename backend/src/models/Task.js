@@ -26,6 +26,11 @@ const taskSchema = new mongoose.Schema(
 
     dueDate: {
       type: Date,
+      required: [true, "Due date is required"],
+      default: function () {
+        const base = this.createdAt ? new Date(this.createdAt).getTime() : Date.now();
+        return new Date(base + 24 * 60 * 60 * 1000);
+      },
     },
 
     completed: {
@@ -58,5 +63,23 @@ const taskSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Guarantee that missing or null dueDate is assigned 24 hours from creation before validation runs
+taskSchema.pre("validate", function (next) {
+  if (!this.dueDate) {
+    const base = this.createdAt ? new Date(this.createdAt).getTime() : Date.now();
+    this.dueDate = new Date(base + 24 * 60 * 60 * 1000);
+  }
+  next();
+});
+
+// Extra safety before saving
+taskSchema.pre("save", function (next) {
+  if (!this.dueDate) {
+    const base = this.createdAt ? new Date(this.createdAt).getTime() : Date.now();
+    this.dueDate = new Date(base + 24 * 60 * 60 * 1000);
+  }
+  next();
+});
 
 module.exports = mongoose.model("Task", taskSchema);

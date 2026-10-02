@@ -32,23 +32,39 @@ passport.use(
       console.log(`  - Display Name: ${profile.displayName}`);
       console.log(`  - Email: ${profile.emails && profile.emails[0] ? profile.emails[0].value : "N/A"}`);
       try {
+        const email = profile.emails && profile.emails[0] ? profile.emails[0].value.toLowerCase().trim() : "";
+
+        // Check if user exists by googleId or email
         let user = await User.findOne({
-          googleId: profile.id,
+          $or: [
+            { googleId: profile.id },
+            ...(email ? [{ email }] : [])
+          ]
         });
 
         if (user) {
           console.log(`[Passport Google Strategy Callback] Existing user found in DB: ${user.username} (${user._id})`);
+          if (!user.googleId) {
+            user.googleId = profile.id;
+            await user.save();
+          }
           return done(null, user);
         }
 
-        const displayName = profile.displayName;
+        const displayName = (profile.displayName || "PunchUp User").trim();
 
         let baseUsername = displayName
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "");
 
-        let username = baseUsername;
+        if (!baseUsername) {
+          baseUsername = email ? email.split("@")[0].replace(/[^a-z0-9]/g, "") : "user";
+        }
+        if (!baseUsername) {
+          baseUsername = "user";
+        }
 
+        let username = baseUsername;
         let counter = 1;
 
         while (
@@ -63,13 +79,9 @@ passport.use(
         console.log(`[Passport Google Strategy Callback] User not found. Creating new user with username: ${username}`);
         user = await User.create({
           googleId: profile.id,
-
           displayName,
-
           username,
-
-          email: profile.emails && profile.emails[0] ? profile.emails[0].value : "",
-
+          email: email || `user_${profile.id}@punchup.app`,
           profilePicture: profile.photos && profile.photos[0] ? profile.photos[0].value : "",
         });
 

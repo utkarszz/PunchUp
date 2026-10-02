@@ -1,26 +1,34 @@
 const Task = require('../models/Task');
-const { updateStreak } = require('../services/streakService');
-const { awardTaskCompletionPoints, getLeague } = require('../services/pointService');
+const streakService = require('../services/streakService');
+const pointService = require('../services/pointService');
 
 const createTask = async (req, res) => {
   try {
     const { title, description, priority, category, dueDate } = req.body;
 
-    if (dueDate) {
-      const parsedDate = new Date(dueDate);
-      if (isNaN(parsedDate.getTime())) {
+    let parsedDueDate;
+    if (dueDate !== undefined && dueDate !== null && dueDate !== "") {
+      parsedDueDate = new Date(dueDate);
+      if (isNaN(parsedDueDate.getTime())) {
         return res.status(400).json({ success: false, message: 'Invalid due date format' });
       }
     }
 
-    const task = await Task.create({
+    const taskData = {
       title,
       description,
       priority,
       category,
-      dueDate: dueDate ? new Date(dueDate) : undefined,
       user: req.user._id,
-    });
+    };
+
+    if (parsedDueDate) {
+      taskData.dueDate = parsedDueDate;
+    } else {
+      taskData.dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    }
+
+    const task = await Task.create(taskData);
 
     res.status(201).json({ success: true, task });
   } catch (error) {
@@ -30,9 +38,8 @@ const createTask = async (req, res) => {
 
 // ── Active task query ────────────────────────────────────────────────────────
 // Show an active task when ANY of these is true:
-//   1. Task is not completed (always visible until completed or deleted)
-//   2. Task IS completed + has a future dueDate (visible until due date passes)
-//   3. Task IS completed + has NO dueDate + was completed within the last 24h
+//   1. Task is not completed (always visible until completed or deleted — overdue tasks remain until user completes them)
+//   2. Task IS completed + (has a future dueDate OR was completed within the last 24h window)
 const getTasks = async (req, res) => {
   try {
     const now = new Date();
@@ -44,16 +51,13 @@ const getTasks = async (req, res) => {
       $or: [
         // 1. Incomplete — always show
         { completed: false },
-        // 2. Completed with a due date that hasn't passed yet
+        // 2. Completed with future due date OR completed within the last 24h window
         {
           completed: true,
-          dueDate: { $exists: true, $ne: null, $gt: now },
-        },
-        // 3. Completed with no due date, within 24h window
-        {
-          completed: true,
-          $or: [{ dueDate: { $exists: false } }, { dueDate: null }],
-          completedAt: { $gte: twentyFourHoursAgo },
+          $or: [
+            { dueDate: { $gt: now } },
+            { completedAt: { $gte: twentyFourHoursAgo } },
+          ],
         },
       ],
     }).sort({ createdAt: -1 });
@@ -72,26 +76,26 @@ const updateTask = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
-    const { dueDate } = req.body;
-    if (dueDate !== undefined) {
-      if (dueDate) {
-        const parsedDate = new Date(dueDate);
-        if (isNaN(parsedDate.getTime())) {
-          return res.status(400).json({ success: false, message: 'Invalid due date format' });
-        }
-        req.body.dueDate = parsedDate;
-      } else {
-        req.body.dueDate = null;
-      }
-    }
-
     // Whitelist only allowed fields — never pass raw req.body to prevent mass assignment
     const allowedFields = {};
     if (req.body.title !== undefined) allowedFields.title = req.body.title;
     if (req.body.description !== undefined) allowedFields.description = req.body.description;
     if (req.body.priority !== undefined) allowedFields.priority = req.body.priority;
     if (req.body.category !== undefined) allowedFields.category = req.body.category;
-    if (req.body.dueDate !== undefined) allowedFields.dueDate = req.body.dueDate;
+
+    if (req.body.dueDate !== undefined) {
+      if (req.body.dueDate) {
+        const parsedDate = new Date(req.body.dueDate);
+        if (isNaN(parsedDate.getTime())) {
+          return res.status(400).json({ success: false, message: 'Invalid due date format' });
+        }
+        allowedFields.dueDate = parsedDate;
+      } else {
+        // If explicitly set to empty or null, reset to 24h from task creation
+        const base = task.createdAt ? new Date(task.createdAt).getTime() : Date.now();
+        allowedFields.dueDate = new Date(base + 24 * 60 * 60 * 1000);
+      }
+    }
 
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, { $set: allowedFields }, {
       new: true,
@@ -167,7 +171,7 @@ const completeTask = async (req, res) => {
         task,
         pointsAwarded: 0,
         newTotalPoints: user?.totalPoints || 0,
-        league: getLeague(user?.totalPoints || 0),
+        league: pointService.getLeague(user?.totalPoints || 0),
         alreadyCompleted: true,
       });
     }
@@ -178,10 +182,10 @@ const completeTask = async (req, res) => {
     await task.save();
 
     // Update streak (existing, idempotent per-day logic)
-    await updateStreak(req.user._id);
+    await streakService.updateStreak(req.user._id);
 
     // Award points (idempotent — duplicate-safe)
-    const pointResult = await awardTaskCompletionPoints(req.user._id, task._id);
+    const pointResult = await pointService.awardTaskCompletionPoints(req.user._id, task._id);
 
     // Re-fetch updated task and user
     const [updatedTask, user] = await Promise.all([
@@ -197,7 +201,7 @@ const completeTask = async (req, res) => {
       task: updatedTask,
       pointsAwarded: pointResult.awarded ? pointResult.points : 0,
       newTotalPoints,
-      league: getLeague(newTotalPoints),
+      league: pointService.getLeague(newTotalPoints),
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

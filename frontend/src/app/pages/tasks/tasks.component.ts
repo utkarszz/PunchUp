@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -72,14 +72,14 @@ import { ToastService } from '../../core/services/toast.service';
             <span>Overdue ({{ overdueTasks.length }})</span>
           </div>
           <div class="tasks-grid">
-            <div *ngFor="let task of overdueTasks" class="card task-card overdue">
+            <div *ngFor="let task of overdueTasks" class="card task-card" [class.overdue]="isOverdue(task)" [class.completed]="task.completed">
               <div class="task-card-header">
                 <div class="task-check-row">
                   <label class="checkbox-container">
                     <input type="checkbox" [checked]="task.completed" [disabled]="task.completed" (change)="onComplete(task)" />
                     <span class="checkmark"></span>
                   </label>
-                  <h4 class="task-title text-overdue" [title]="task.title">{{ task.title }}</h4>
+                  <h4 class="task-title" [class.text-overdue]="isOverdue(task)" [title]="task.title">{{ task.title }}</h4>
                 </div>
                 <div class="task-actions">
                   <button (click)="openEditModal(task)" class="btn-icon" title="Edit">
@@ -99,8 +99,8 @@ import { ToastService } from '../../core/services/toast.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
-                <span class="overdue-tag">Overdue</span>
-                <span class="due-date-badge overdue-badge" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+                <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
+                <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
               </div>
             </div>
           </div>
@@ -110,14 +110,14 @@ import { ToastService } from '../../core/services/toast.service';
         <div class="group-section" *ngIf="todayTasks.length > 0">
           <div class="group-label">Today ({{ todayTasks.length }})</div>
           <div class="tasks-grid">
-            <div *ngFor="let task of todayTasks" class="card task-card" [class.completed]="task.completed">
+            <div *ngFor="let task of todayTasks" class="card task-card" [class.overdue]="isOverdue(task)" [class.completed]="task.completed">
               <div class="task-card-header">
                 <div class="task-check-row">
                   <label class="checkbox-container">
                     <input type="checkbox" [checked]="task.completed" [disabled]="task.completed" (change)="onComplete(task)" />
                     <span class="checkmark"></span>
                   </label>
-                  <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
+                  <h4 class="task-title" [class.text-overdue]="isOverdue(task)" [title]="task.title">{{ task.title }}</h4>
                 </div>
                 <div class="task-actions">
                   <button (click)="openEditModal(task)" class="btn-icon" title="Edit">
@@ -137,7 +137,8 @@ import { ToastService } from '../../core/services/toast.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
-                <span class="due-date-badge" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+                <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
+                <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
               </div>
             </div>
           </div>
@@ -147,14 +148,14 @@ import { ToastService } from '../../core/services/toast.service';
         <div class="group-section" *ngIf="upcomingTasks.length > 0">
           <div class="group-label">Upcoming ({{ upcomingTasks.length }})</div>
           <div class="tasks-grid">
-            <div *ngFor="let task of upcomingTasks" class="card task-card" [class.completed]="task.completed">
+            <div *ngFor="let task of upcomingTasks" class="card task-card" [class.overdue]="isOverdue(task)" [class.completed]="task.completed">
               <div class="task-card-header">
                 <div class="task-check-row">
                   <label class="checkbox-container">
                     <input type="checkbox" [checked]="task.completed" [disabled]="task.completed" (change)="onComplete(task)" />
                     <span class="checkmark"></span>
                   </label>
-                  <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
+                  <h4 class="task-title" [class.text-overdue]="isOverdue(task)" [title]="task.title">{{ task.title }}</h4>
                 </div>
                 <div class="task-actions">
                   <button (click)="openEditModal(task)" class="btn-icon" title="Edit">
@@ -174,7 +175,8 @@ import { ToastService } from '../../core/services/toast.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
-                <span class="due-date-badge" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+                <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
+                <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
               </div>
             </div>
           </div>
@@ -184,14 +186,14 @@ import { ToastService } from '../../core/services/toast.service';
         <div class="group-section" *ngIf="noDueDateTasks.length > 0">
           <div class="group-label">Other Tasks ({{ noDueDateTasks.length }})</div>
           <div class="tasks-grid">
-            <div *ngFor="let task of noDueDateTasks" class="card task-card" [class.completed]="task.completed">
+            <div *ngFor="let task of noDueDateTasks" class="card task-card" [class.overdue]="isOverdue(task)" [class.completed]="task.completed">
               <div class="task-card-header">
                 <div class="task-check-row">
                   <label class="checkbox-container">
                     <input type="checkbox" [checked]="task.completed" [disabled]="task.completed" (change)="onComplete(task)" />
                     <span class="checkmark"></span>
                   </label>
-                  <h4 class="task-title" [title]="task.title">{{ task.title }}</h4>
+                  <h4 class="task-title" [class.text-overdue]="isOverdue(task)" [title]="task.title">{{ task.title }}</h4>
                 </div>
                 <div class="task-actions">
                   <button (click)="openEditModal(task)" class="btn-icon" title="Edit">
@@ -211,6 +213,8 @@ import { ToastService } from '../../core/services/toast.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+                <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
+                <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
               </div>
             </div>
           </div>
@@ -283,6 +287,7 @@ import { ToastService } from '../../core/services/toast.service';
               <div class="form-group">
                 <label>Due Date & Time (optional)</label>
                 <input type="datetime-local" [(ngModel)]="modalTask.dueDate" name="dueDate" />
+                <span class="form-hint">Leave blank to automatically set deadline to 24 hours from creation.</span>
               </div>
             </div>
 
@@ -639,6 +644,12 @@ import { ToastService } from '../../core/services/toast.service';
       flex-direction: column;
     }
 
+    .form-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -751,7 +762,7 @@ import { ToastService } from '../../core/services/toast.service';
     }
   `]
 })
-export class TasksComponent implements OnInit {
+export class TasksComponent implements OnInit, OnDestroy {
   private taskService = inject(TaskService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
@@ -779,6 +790,7 @@ export class TasksComponent implements OnInit {
   public isEditMode = false;
   public modalTask: Partial<Task> = this.resetModalTask();
   private activeEditingId: string | null = null;
+  private timerSubscription: any = null;
 
   ngOnInit() {
     this.updateInitialLimit();
@@ -789,11 +801,32 @@ export class TasksComponent implements OnInit {
         this.openCreateModal();
       }
     });
+
+    // Check periodically for tasks that become overdue without manual refresh
+    this.timerSubscription = setInterval(() => {
+      this.checkOverdueTransitions();
+    }, 10000);
+  }
+
+  ngOnDestroy() {
+    if (this.timerSubscription) {
+      clearInterval(this.timerSubscription);
+      this.timerSubscription = null;
+    }
   }
 
   @HostListener('window:resize')
   onResize() {
     this.updateInitialLimit();
+  }
+
+  @HostListener('window:focus')
+  onFocus() {
+    this.checkOverdueTransitions();
+  }
+
+  public checkOverdueTransitions() {
+    this.applyFilters();
   }
 
   private updateInitialLimit() {
@@ -818,7 +851,7 @@ export class TasksComponent implements OnInit {
   }
 
   public isOverdue(task: Task): boolean {
-    if (task.completed || !task.dueDate) return false;
+    if (!task || task.completed || !task.dueDate) return false;
     return new Date(task.dueDate).getTime() < Date.now();
   }
 
@@ -902,9 +935,9 @@ export class TasksComponent implements OnInit {
   public formatDueDate(dateStr: string): string {
     if (!dateStr) return '';
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
     const now = new Date();
     const isThisYear = d.getFullYear() === now.getFullYear();
-    const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
 
     const datePart = d.toLocaleDateString('en-US', {
       month: 'short',
@@ -912,11 +945,8 @@ export class TasksComponent implements OnInit {
       year: isThisYear ? undefined : 'numeric',
     });
 
-    if (hasTime) {
-      const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      return `${datePart}, ${timePart}`;
-    }
-    return datePart;
+    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return `${datePart}, ${timePart}`;
   }
 
   private resetModalTask(): Partial<Task> {
@@ -966,10 +996,23 @@ export class TasksComponent implements OnInit {
   }
 
   public saveTask() {
-    if (!this.modalTask.title) return;
+    if (!this.modalTask.title || !this.modalTask.title.trim()) return;
+
+    const payload: Partial<Task> = {
+      title: this.modalTask.title.trim(),
+      description: (this.modalTask.description || '').trim(),
+      priority: this.modalTask.priority || 'medium',
+      category: this.modalTask.category || 'general',
+    };
+
+    if (this.modalTask.dueDate) {
+      payload.dueDate = new Date(this.modalTask.dueDate).toISOString();
+    } else {
+      payload.dueDate = this.isEditMode ? '' : undefined;
+    }
 
     if (this.isEditMode && this.activeEditingId) {
-      this.taskService.updateTask(this.activeEditingId, this.modalTask).subscribe((response: any) => {
+      this.taskService.updateTask(this.activeEditingId, payload).subscribe((response: any) => {
         if (response.success) {
           this.loadTasks();
           this.closeModal();
@@ -977,7 +1020,7 @@ export class TasksComponent implements OnInit {
         }
       });
     } else {
-      this.taskService.createTask(this.modalTask).subscribe((response: any) => {
+      this.taskService.createTask(payload).subscribe((response: any) => {
         if (response.success) {
           this.loadTasks();
           this.closeModal();
@@ -995,6 +1038,9 @@ export class TasksComponent implements OnInit {
         if (response.success) {
           task.completed = true;
           task.completedAt = response.task.completedAt;
+
+          // Immediately remove overdue visual state and re-filter
+          this.applyFilters();
 
           if (response.pointsAwarded && response.pointsAwarded > 0) {
             this.toastService.showSuccess(`+${response.pointsAwarded} points awarded! 🎯 (${response.league} League)`);
