@@ -58,11 +58,34 @@ const taskSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    reminderInterval: {
+      type: Number,
+      enum: [0, 1, 2, 3, 4, 5],
+      default: 0,
+    },
+
+    reminderEnabled: {
+      type: Boolean,
+      default: false,
+    },
+
+    nextReminderAt: {
+      type: Date,
+      default: null,
+    },
+
+    lastReminderSentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+taskSchema.index({ reminderEnabled: 1, completed: 1, isDeleted: 1, nextReminderAt: 1 });
 
 // Guarantee that missing or null dueDate is assigned 24 hours from creation before validation runs
 taskSchema.pre("validate", function (next) {

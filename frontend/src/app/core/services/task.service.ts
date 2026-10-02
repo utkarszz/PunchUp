@@ -13,6 +13,10 @@ export interface Task {
   completed: boolean;
   completedAt?: string;
   pointsAwarded?: boolean;
+  reminderInterval?: number;
+  reminderEnabled?: boolean;
+  nextReminderAt?: string;
+  lastReminderSentAt?: string;
   user: string;
   createdAt: string;
   updatedAt: string;

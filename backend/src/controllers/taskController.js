@@ -14,12 +14,27 @@ const createTask = async (req, res) => {
       }
     }
 
+    let reminderInterval = 0;
+    if (req.body.reminderInterval !== undefined && req.body.reminderInterval !== null && req.body.reminderInterval !== "") {
+      const parsedInterval = Number(req.body.reminderInterval);
+      if (!Number.isInteger(parsedInterval) || parsedInterval < 0 || parsedInterval > 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid reminder interval. Must be an integer between 0 and 5.',
+        });
+      }
+      reminderInterval = parsedInterval;
+    }
+
     const taskData = {
       title,
       description,
       priority,
       category,
       user: req.user._id,
+      reminderInterval,
+      reminderEnabled: reminderInterval > 0,
+      nextReminderAt: reminderInterval > 0 ? new Date(Date.now() + reminderInterval * 60 * 60 * 1000) : null,
     };
 
     if (parsedDueDate) {
@@ -97,6 +112,30 @@ const updateTask = async (req, res) => {
       }
     }
 
+    if (req.body.reminderInterval !== undefined) {
+      if (req.body.reminderInterval === null || req.body.reminderInterval === '') {
+        allowedFields.reminderInterval = 0;
+        allowedFields.reminderEnabled = false;
+        allowedFields.nextReminderAt = null;
+      } else {
+        const parsedInterval = Number(req.body.reminderInterval);
+        if (!Number.isInteger(parsedInterval) || parsedInterval < 0 || parsedInterval > 5) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid reminder interval. Must be an integer between 0 and 5.',
+          });
+        }
+        allowedFields.reminderInterval = parsedInterval;
+        if (parsedInterval > 0) {
+          allowedFields.reminderEnabled = true;
+          allowedFields.nextReminderAt = new Date(Date.now() + parsedInterval * 60 * 60 * 1000);
+        } else {
+          allowedFields.reminderEnabled = false;
+          allowedFields.nextReminderAt = null;
+        }
+      }
+    }
+
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, { $set: allowedFields }, {
       new: true,
       runValidators: true,
@@ -122,6 +161,8 @@ const deleteTask = async (req, res) => {
       await task.deleteOne();
     } else {
       task.isDeleted = true;
+      task.reminderEnabled = false;
+      task.nextReminderAt = null;
       await task.save();
     }
 
@@ -179,6 +220,8 @@ const completeTask = async (req, res) => {
     // First-time completion
     task.completed = true;
     task.completedAt = new Date();
+    task.reminderEnabled = false;
+    task.nextReminderAt = null;
     await task.save();
 
     // Update streak (existing, idempotent per-day logic)

@@ -14,6 +14,7 @@ const getNotifications = async (req, res) => {
       recipient: req.user._id,
     })
       .populate("sender", "username displayName profilePicture")
+      .populate("task", "title dueDate completed priority")
       .populate("post", "content images")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -107,9 +108,68 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
+const PushSubscription = require('../models/PushSubscription');
+const { getPublicKey } = require('../services/pushService');
+
+const getVapidPublicKey = async (req, res) => {
+  try {
+    const publicKey = getPublicKey();
+    res.status(200).json({ success: true, publicKey });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const subscribePush = async (req, res) => {
+  try {
+    const { endpoint, keys } = req.body;
+    if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid subscription payload. Must include endpoint and keys (p256dh, auth).',
+      });
+    }
+
+    const subscription = await PushSubscription.findOneAndUpdate(
+      { endpoint },
+      {
+        user: req.user._id,
+        endpoint,
+        keys: {
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+        },
+        userAgent: req.headers['user-agent'] || '',
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    res.status(200).json({ success: true, subscriptionId: subscription._id });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const unsubscribePush = async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (endpoint) {
+      await PushSubscription.deleteOne({ endpoint, user: req.user._id });
+    } else {
+      await PushSubscription.deleteMany({ user: req.user._id });
+    }
+    res.status(200).json({ success: true, message: 'Unsubscribed from push notifications.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getNotifications,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  getVapidPublicKey,
+  subscribePush,
+  unsubscribePush,
 };

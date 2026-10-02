@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TaskService, Task } from '../../core/services/task.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ReminderService } from '../../core/services/reminder.service';
 
 @Component({
   selector: 'app-tasks',
@@ -101,6 +102,13 @@ import { ToastService } from '../../core/services/toast.service';
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+                <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                  </svg>
+                  <span>Every {{ task.reminderInterval }}h</span>
+                </span>
               </div>
             </div>
           </div>
@@ -139,6 +147,13 @@ import { ToastService } from '../../core/services/toast.service';
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+                <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                  </svg>
+                  <span>Every {{ task.reminderInterval }}h</span>
+                </span>
               </div>
             </div>
           </div>
@@ -177,6 +192,13 @@ import { ToastService } from '../../core/services/toast.service';
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+                <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                  </svg>
+                  <span>Every {{ task.reminderInterval }}h</span>
+                </span>
               </div>
             </div>
           </div>
@@ -215,6 +237,13 @@ import { ToastService } from '../../core/services/toast.service';
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
+                <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                  </svg>
+                  <span>Every {{ task.reminderInterval }}h</span>
+                </span>
               </div>
             </div>
           </div>
@@ -275,7 +304,7 @@ import { ToastService } from '../../core/services/toast.service';
               <textarea [(ngModel)]="modalTask.description" name="description" rows="3" placeholder="Describe the requirements..."></textarea>
             </div>
 
-            <div class="form-row">
+            <div class="form-row form-row-triple">
               <div class="form-group">
                 <label>Priority</label>
                 <select [(ngModel)]="modalTask.priority" name="priority">
@@ -285,10 +314,51 @@ import { ToastService } from '../../core/services/toast.service';
                 </select>
               </div>
               <div class="form-group">
+                <label>Reminder</label>
+                <select [(ngModel)]="modalTask.reminderInterval" name="reminderInterval" (change)="onReminderIntervalChange()">
+                  <option [ngValue]="0">No reminder</option>
+                  <option [ngValue]="1">Every 1 hour</option>
+                  <option [ngValue]="2">Every 2 hours</option>
+                  <option [ngValue]="3">Every 3 hours</option>
+                  <option [ngValue]="4">Every 4 hours</option>
+                  <option [ngValue]="5">Every 5 hours</option>
+                </select>
+                <span class="form-hint" *ngIf="modalTask.reminderInterval && modalTask.reminderInterval > 0">
+                  Reminder: Every {{ modalTask.reminderInterval }} hour{{ modalTask.reminderInterval > 1 ? 's' : '' }}
+                </span>
+              </div>
+              <div class="form-group form-group-due">
                 <label>Due Date & Time (optional)</label>
                 <input type="datetime-local" [(ngModel)]="modalTask.dueDate" name="dueDate" />
                 <span class="form-hint">Leave blank to automatically set deadline to 24 hours from creation.</span>
               </div>
+            </div>
+
+            <!-- Permission prompt card (only appears when user chooses interval > 0 and permission is default) -->
+            <div class="permission-prompt-card" *ngIf="showPermissionPrompt">
+              <div class="prompt-content">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <div class="prompt-text">
+                  <p>PunchUp needs notification permission to remind you about your tasks.</p>
+                </div>
+              </div>
+              <div class="prompt-actions">
+                <button type="button" class="btn btn-sm btn-primary" (click)="confirmPermission()">Enable Notifications</button>
+                <button type="button" class="btn btn-sm btn-secondary" (click)="dismissPermissionPrompt()">Cancel</button>
+              </div>
+            </div>
+
+            <!-- Permission denied alert (only appears when user chooses interval > 0 and permission is denied) -->
+            <div class="permission-denied-alert" *ngIf="permissionDeniedMessage">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ permissionDeniedMessage }}</span>
             </div>
 
             <div class="modal-buttons">
@@ -650,10 +720,90 @@ import { ToastService } from '../../core/services/toast.service';
       margin-top: 0.35rem;
     }
 
+    .reminder-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 4px;
+      padding: 0.125rem 0.45rem;
+      line-height: 1.3;
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
+    }
+
+    .form-row-triple {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group-due {
+      grid-column: 1 / -1;
+    }
+
+    .permission-prompt-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 0.875rem 1rem;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: var(--radius);
+      animation: fadeIn 0.2s ease;
+    }
+
+    .prompt-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .prompt-content svg {
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+
+    .prompt-text p {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .prompt-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .permission-denied-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.75rem 1rem;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: var(--radius);
+      color: var(--danger, #ef4444);
+      font-size: 0.8125rem;
+      line-height: 1.4;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .permission-denied-alert svg {
+      flex-shrink: 0;
+      margin-top: 0.1rem;
     }
 
     .modal-buttons {
@@ -712,8 +862,12 @@ import { ToastService } from '../../core/services/toast.service';
         min-height: unset;
       }
 
-      .form-row {
+      .form-row, .form-row-triple {
         grid-template-columns: 1fr;
+      }
+
+      .form-group-due {
+        grid-column: auto;
       }
 
       .modal-buttons {
@@ -766,6 +920,7 @@ export class TasksComponent implements OnInit, OnDestroy {
   private taskService = inject(TaskService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
+  public reminderService = inject(ReminderService);
 
   public allTasks: Task[] = [];
   public filteredTasks: Task[] = [];
@@ -789,6 +944,8 @@ export class TasksComponent implements OnInit, OnDestroy {
   public showModal = false;
   public isEditMode = false;
   public modalTask: Partial<Task> = this.resetModalTask();
+  public showPermissionPrompt = false;
+  public permissionDeniedMessage = '';
   private activeEditingId: string | null = null;
   private timerSubscription: any = null;
 
@@ -956,12 +1113,16 @@ export class TasksComponent implements OnInit, OnDestroy {
       priority: 'medium',
       category: 'general',
       dueDate: '',
+      reminderInterval: 0,
+      reminderEnabled: false,
     };
   }
 
   public openCreateModal() {
     this.isEditMode = false;
     this.modalTask = this.resetModalTask();
+    this.showPermissionPrompt = false;
+    this.permissionDeniedMessage = '';
     this.activeEditingId = null;
     this.showModal = true;
   }
@@ -969,6 +1130,8 @@ export class TasksComponent implements OnInit, OnDestroy {
   public openEditModal(task: Task) {
     this.isEditMode = true;
     this.activeEditingId = task._id;
+    this.showPermissionPrompt = false;
+    this.permissionDeniedMessage = '';
 
     // Convert date to datetime-local friendly format YYYY-MM-DDTHH:mm
     let localDue = '';
@@ -984,6 +1147,8 @@ export class TasksComponent implements OnInit, OnDestroy {
       priority: task.priority,
       category: task.category || 'general',
       dueDate: localDue,
+      reminderInterval: task.reminderInterval || 0,
+      reminderEnabled: task.reminderEnabled || false,
     };
 
     this.showModal = true;
@@ -991,8 +1156,58 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   public closeModal() {
     this.showModal = false;
+    this.showPermissionPrompt = false;
+    this.permissionDeniedMessage = '';
     this.modalTask = this.resetModalTask();
     this.activeEditingId = null;
+  }
+
+  public async onReminderIntervalChange() {
+    this.permissionDeniedMessage = '';
+    const interval = Number(this.modalTask.reminderInterval) || 0;
+
+    if (interval === 0) {
+      this.showPermissionPrompt = false;
+      this.modalTask.reminderInterval = 0;
+      return;
+    }
+
+    // User explicitly enabled reminder > 0: Check browser notification permission specifically for PunchUp
+    const status = this.reminderService.getPermissionState();
+
+    if (status === 'granted') {
+      this.showPermissionPrompt = false;
+      this.reminderService.ensureSubscribed().catch(() => {});
+    } else if (status === 'denied') {
+      this.modalTask.reminderInterval = 0;
+      this.showPermissionPrompt = false;
+      this.permissionDeniedMessage = 'Browser notifications are blocked for PunchUp. Enable notifications for PunchUp in your browser settings to use reminders.';
+    } else {
+      // 'default' - show clear user-initiated permission prompt
+      this.showPermissionPrompt = true;
+    }
+  }
+
+  public async confirmPermission() {
+    const granted = await this.reminderService.requestPermission();
+    this.showPermissionPrompt = false;
+    if (granted) {
+      this.permissionDeniedMessage = '';
+      this.toastService.showSuccess('PunchUp reminders enabled');
+    } else {
+      this.modalTask.reminderInterval = 0;
+      const status = this.reminderService.getPermissionState();
+      if (status === 'denied') {
+        this.permissionDeniedMessage = 'Browser notifications are blocked for PunchUp. Enable notifications for PunchUp in your browser settings to use reminders.';
+      } else {
+        this.toastService.showInfo('Notification permission was not granted.');
+      }
+    }
+  }
+
+  public dismissPermissionPrompt() {
+    this.showPermissionPrompt = false;
+    this.modalTask.reminderInterval = 0;
   }
 
   public saveTask() {
@@ -1003,6 +1218,7 @@ export class TasksComponent implements OnInit, OnDestroy {
       description: (this.modalTask.description || '').trim(),
       priority: this.modalTask.priority || 'medium',
       category: this.modalTask.category || 'general',
+      reminderInterval: Number(this.modalTask.reminderInterval) || 0,
     };
 
     if (this.modalTask.dueDate) {

@@ -10,6 +10,8 @@ const connectDB = async () => {
     migrateTaskDueDates().catch(err => {
       console.error('Task due-date migration error:', err.message);
     });
+    const { startScheduler } = require('../services/reminderScheduler');
+    startScheduler();
   } catch(error){
     console.error('MongoDB connection error:');
     console.error(error.message);

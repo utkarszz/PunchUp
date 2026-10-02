@@ -10,17 +10,26 @@ const notificationSchema = new mongoose.Schema(
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
     type: {
       type: String,
-      enum: ["follow", "like", "comment"],
+      enum: ["follow", "like", "comment", "task_reminder"],
       required: true,
     },
     post: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Post",
       default: null,
+    },
+    task: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Task",
+      default: null,
+    },
+    message: {
+      type: String,
+      default: "",
     },
     isRead: {
       type: Boolean,

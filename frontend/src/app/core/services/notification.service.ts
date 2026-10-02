@@ -6,14 +6,16 @@ import { environment } from '../../../environments/environment';
 
 export interface Notification {
   _id: string;
-  type: 'follow' | 'like' | 'comment';
-  from: {
+  type: 'follow' | 'like' | 'comment' | 'task_reminder';
+  from?: {
     _id: string;
     username: string;
     displayName?: string;
     profilePicture?: string;
   };
   post?: { _id: string; content: string };
+  task?: { _id: string; title: string; dueDate?: string; completed?: boolean };
+  message?: string;
   read: boolean;
   createdAt: string;
 }
@@ -47,6 +49,8 @@ export class NotificationService {
           // Backend uses 'sender', frontend template expects 'from'
           from: n.sender || n.from || null,
           post: n.post || null,
+          task: n.task || null,
+          message: n.message || '',
           // Backend uses 'isRead', frontend template expects 'read'
           read: n.isRead ?? n.read ?? false,
           createdAt: n.createdAt,

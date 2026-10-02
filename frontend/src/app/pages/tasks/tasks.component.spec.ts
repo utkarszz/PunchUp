@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { TasksComponent } from './tasks.component';
 import { TaskService, Task } from '../../core/services/task.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ReminderService } from '../../core/services/reminder.service';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -10,6 +11,7 @@ describe('TasksComponent - Task Due-Date & Overdue System', () => {
   let fixture: ComponentFixture<TasksComponent>;
   let mockTaskService: jasmine.SpyObj<TaskService>;
   let mockToastService: jasmine.SpyObj<ToastService>;
+  let mockReminderService: jasmine.SpyObj<ReminderService>;
 
   const mockTasks: Task[] = [
     {
@@ -60,6 +62,14 @@ describe('TasksComponent - Task Due-Date & Overdue System', () => {
       'deleteTask',
     ]);
     mockToastService = jasmine.createSpyObj('ToastService', ['showSuccess', 'showInfo', 'showError']);
+    mockReminderService = jasmine.createSpyObj('ReminderService', [
+      'getPermissionState',
+      'requestPermission',
+      'ensureSubscribed',
+    ]);
+    mockReminderService.getPermissionState.and.returnValue('granted');
+    mockReminderService.requestPermission.and.returnValue(Promise.resolve(true));
+    mockReminderService.ensureSubscribed.and.returnValue(Promise.resolve());
 
     mockTaskService.getTasks.and.returnValue(of({ success: true, count: mockTasks.length, tasks: JSON.parse(JSON.stringify(mockTasks)) }));
 
@@ -68,6 +78,7 @@ describe('TasksComponent - Task Due-Date & Overdue System', () => {
       providers: [
         { provide: TaskService, useValue: mockTaskService },
         { provide: ToastService, useValue: mockToastService },
+        { provide: ReminderService, useValue: mockReminderService },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -249,5 +260,132 @@ describe('TasksComponent - Task Due-Date & Overdue System', () => {
     const overdueTitle = compiled.querySelector('.task-title.text-overdue');
     expect(overdueTitle).toBeTruthy();
     expect(overdueTitle?.textContent?.trim()).toBe('Incomplete Past Due Task');
+  });
+
+  describe('Task Reminder System Tests', () => {
+    it('11. Selecting reminder interval with permission "granted" keeps reminder active and does not prompt', fakeAsync(() => {
+      mockReminderService.getPermissionState.and.returnValue('granted');
+      component.openCreateModal();
+
+      component.modalTask.reminderInterval = 2;
+      component.onReminderIntervalChange();
+      tick();
+
+      expect(component.showPermissionPrompt).toBe(false);
+      expect(component.modalTask.reminderInterval).toBe(2);
+      expect(component.permissionDeniedMessage).toBe('');
+      expect(mockReminderService.ensureSubscribed).toHaveBeenCalled();
+    }));
+
+    it('12. Selecting reminder interval with permission "default" shows user-initiated permission prompt', fakeAsync(() => {
+      mockReminderService.getPermissionState.and.returnValue('default');
+      component.openCreateModal();
+
+      component.modalTask.reminderInterval = 3;
+      component.onReminderIntervalChange();
+      tick();
+
+      expect(component.showPermissionPrompt).toBe(true);
+      expect(component.permissionDeniedMessage).toBe('');
+      // Does not immediately request browser permission without user clicking enable
+      expect(mockReminderService.requestPermission).not.toHaveBeenCalled();
+    }));
+
+    it('13. Confirming permission request successfully keeps reminder active', fakeAsync(() => {
+      mockReminderService.getPermissionState.and.returnValue('default');
+      mockReminderService.requestPermission.and.returnValue(Promise.resolve(true));
+
+      component.openCreateModal();
+      component.modalTask.reminderInterval = 4;
+      component.showPermissionPrompt = true;
+
+      component.confirmPermission();
+      tick();
+
+      expect(component.showPermissionPrompt).toBe(false);
+      expect(component.modalTask.reminderInterval).toBe(4);
+      expect(mockToastService.showSuccess).toHaveBeenCalledWith(jasmine.stringMatching(/PunchUp reminders enabled/));
+    }));
+
+    it('14. Dismissing permission prompt cancels reminder and resets interval to 0', () => {
+      component.openCreateModal();
+      component.modalTask.reminderInterval = 2;
+      component.showPermissionPrompt = true;
+
+      component.dismissPermissionPrompt();
+
+      expect(component.showPermissionPrompt).toBe(false);
+      expect(component.modalTask.reminderInterval).toBe(0);
+    });
+
+    it('15. Selecting reminder when permission is "denied" resets interval to 0 and shows blocked message', fakeAsync(() => {
+      mockReminderService.getPermissionState.and.returnValue('denied');
+      component.openCreateModal();
+
+      component.modalTask.reminderInterval = 1;
+      component.onReminderIntervalChange();
+      tick();
+
+      expect(component.modalTask.reminderInterval).toBe(0);
+      expect(component.showPermissionPrompt).toBe(false);
+      expect(component.permissionDeniedMessage).toContain('Browser notifications are blocked for PunchUp');
+      expect(mockReminderService.requestPermission).not.toHaveBeenCalled();
+    }));
+
+    it('16. Opening create or edit modal does NOT request permission or show permission prompt', () => {
+      component.openCreateModal();
+      expect(component.showPermissionPrompt).toBe(false);
+      expect(component.permissionDeniedMessage).toBe('');
+      expect(mockReminderService.requestPermission).not.toHaveBeenCalled();
+
+      component.openEditModal(mockTasks[0]);
+      expect(component.showPermissionPrompt).toBe(false);
+      expect(component.permissionDeniedMessage).toBe('');
+      expect(mockReminderService.requestPermission).not.toHaveBeenCalled();
+    });
+
+    it('17. Saving task with reminder sends reminderInterval in API payload', () => {
+      mockTaskService.createTask.and.returnValue(
+        of({
+          success: true,
+          task: {
+            ...mockTasks[2],
+            reminderInterval: 2,
+            reminderEnabled: true,
+          },
+        })
+      );
+
+      component.openCreateModal();
+      component.modalTask.title = 'Reminder DSA Task';
+      component.modalTask.reminderInterval = 2;
+
+      component.saveTask();
+
+      expect(mockTaskService.createTask).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          title: 'Reminder DSA Task',
+          reminderInterval: 2,
+        })
+      );
+    });
+
+    it('18. Renders reminder badge in DOM when task has active reminder', () => {
+      const taskWithReminder: Task = {
+        ...mockTasks[2],
+        _id: 'task_reminded',
+        reminderInterval: 2,
+        reminderEnabled: true,
+      };
+
+      component.allTasks = [taskWithReminder];
+      component.applyFilters();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const reminderBadge = compiled.querySelector('.reminder-badge');
+      expect(reminderBadge).toBeTruthy();
+      expect(reminderBadge?.textContent).toContain('Every 2h');
+    });
   });
 });

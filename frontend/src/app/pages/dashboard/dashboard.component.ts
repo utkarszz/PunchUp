@@ -140,6 +140,13 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
                 <span class="task-category-badge" *ngIf="task.category">{{ task.category }}</span>
               </div>
               <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
+              <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span>{{ task.reminderInterval }}h</span>
+              </span>
               <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
             </div>
           </div>
@@ -504,6 +511,20 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
       border-radius: 4px;
       padding: 0.125rem 0.375rem;
       text-transform: capitalize;
+    }
+
+    .reminder-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 4px;
+      padding: 0.125rem 0.375rem;
+      line-height: 1.3;
     }
 
     .empty-state {
