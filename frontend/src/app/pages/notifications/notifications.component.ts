@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NotificationService, Notification } from '../../core/services/notification.service';
 
 @Component({
@@ -38,7 +38,7 @@ import { NotificationService, Notification } from '../../core/services/notificat
           *ngFor="let notif of notifications"
           class="notif-item card"
           [class.unread]="!notif.read"
-          (click)="markRead(notif)"
+          (click)="onNotificationClick(notif)"
         >
           <div class="notif-avatar-wrapper">
             <img
@@ -51,6 +51,8 @@ import { NotificationService, Notification } from '../../core/services/notificat
               <svg *ngIf="notif.type === 'follow'" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
               <svg *ngIf="notif.type === 'like'" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               <svg *ngIf="notif.type === 'comment'" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+              <svg *ngIf="notif.type === 'comment_reply'" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+              <svg *ngIf="notif.type === 'comment_like'" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               <svg *ngIf="notif.type === 'task_reminder'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             </span>
           </div>
@@ -63,6 +65,8 @@ import { NotificationService, Notification } from '../../core/services/notificat
               <span *ngIf="notif.type === 'follow'"> started following you.</span>
               <span *ngIf="notif.type === 'like'"> liked your post.</span>
               <span *ngIf="notif.type === 'comment'"> commented on your post.</span>
+              <span *ngIf="notif.type === 'comment_reply'"> replied to your comment on a post.</span>
+              <span *ngIf="notif.type === 'comment_like'"> liked your comment.</span>
             </p>
             <p class="notif-text" *ngIf="notif.type === 'task_reminder'">
               <span class="notif-reminder-title">Task Reminder: </span>
@@ -70,7 +74,8 @@ import { NotificationService, Notification } from '../../core/services/notificat
                 {{ notif.task?.title || notif.message || 'Task' }}
               </a>
             </p>
-            <span *ngIf="notif.post?.content" class="notif-post-preview">"{{ notif.post!.content | slice:0:60 }}..."</span>
+            <span *ngIf="notif.comment?.content" class="notif-comment-preview">"{{ notif.comment!.content | slice:0:60 }}..."</span>
+            <span *ngIf="!notif.comment && notif.post?.content" class="notif-post-preview">"{{ notif.post!.content | slice:0:60 }}..."</span>
             <span class="notif-time">{{ getRelativeTime(notif.createdAt) }}</span>
           </div>
 
@@ -187,6 +192,8 @@ import { NotificationService, Notification } from '../../core/services/notificat
     .notif-type-icon.type-follow { background: #3b82f6; color: #fff; }
     .notif-type-icon.type-like   { background: #ef4444; color: #fff; }
     .notif-type-icon.type-comment { background: #8b5cf6; color: #fff; }
+    .notif-type-icon.type-comment_reply { background: #06b6d4; color: #fff; }
+    .notif-type-icon.type-comment_like  { background: #f43f5e; color: #fff; }
     .notif-type-icon.type-task_reminder { background: var(--accent); color: #fff; }
 
     .notif-reminder-title {
@@ -256,6 +263,7 @@ import { NotificationService, Notification } from '../../core/services/notificat
 })
 export class NotificationsComponent implements OnInit {
   private notifService = inject(NotificationService);
+  private router = inject(Router);
 
   notifications: Notification[] = [];
   isLoading = true;
@@ -270,6 +278,19 @@ export class NotificationsComponent implements OnInit {
       },
       error: () => { this.isLoading = false; }
     });
+  }
+
+  onNotificationClick(notif: Notification) {
+    this.markRead(notif);
+
+    if (notif.post) {
+      const postRef = notif.post.shareId || notif.post._id;
+      this.router.navigate(['/community/post', postRef]);
+    } else if (notif.task) {
+      this.router.navigate(['/tasks']);
+    } else if (notif.type === 'follow' && notif.from?.username) {
+      this.router.navigate(['/user', notif.from.username]);
+    }
   }
 
   markRead(notif: Notification) {

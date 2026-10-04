@@ -152,13 +152,20 @@ export class LoginComponent implements OnInit {
   public errorMessage = '';
 
   ngOnInit() {
-    // If user is already authenticated, send them to community feed immediately
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrlParam = urlParams.get('returnUrl');
+    if (returnUrlParam) {
+      this.authService.setReturnUrl(returnUrlParam);
+    }
+
+    // If user is already authenticated, send them to returnUrl or community feed immediately
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/community']);
+      const target = this.authService.getAndClearReturnUrl();
+      this.router.navigateByUrl(target);
+      return;
     }
 
     // Check if redirect has query params
-    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('token')) {
       this.isLoading = true;
     }
@@ -172,6 +179,11 @@ export class LoginComponent implements OnInit {
 
   onGoogleLogin() {
     this.isLoading = true;
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('returnUrl');
+    if (returnUrl) {
+      this.authService.setReturnUrl(returnUrl);
+    }
     this.authService.loginWithGoogle();
   }
 }

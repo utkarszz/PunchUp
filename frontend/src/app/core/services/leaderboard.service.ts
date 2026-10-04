@@ -14,6 +14,18 @@ export interface LeaderboardEntry {
   league: string;
 }
 
+export interface FocusLeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  displayName?: string;
+  profilePicture?: string;
+  totalPoints: number;
+  league: string;
+  durationSeconds: number;
+  focusTime: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -31,5 +43,12 @@ export class LeaderboardService {
 
   public getLeagueLeaderboard(league: string): Observable<{ success: boolean; league: string; leaderboard: LeaderboardEntry[] }> {
     return this.http.get<{ success: boolean; league: string; leaderboard: LeaderboardEntry[] }>(`${this.baseUrl}/league/${league}`);
+  }
+
+  public getFocusLeaderboard(period: string = 'daily', timeZone?: string): Observable<{ success: boolean; period: string; leaderboard: FocusLeaderboardEntry[] }> {
+    const tz = timeZone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC');
+    return this.http.get<{ success: boolean; period: string; leaderboard: FocusLeaderboardEntry[] }>(
+      `${this.baseUrl}/focus?period=${period}&timeZone=${encodeURIComponent(tz || 'UTC')}`
+    );
   }
 }

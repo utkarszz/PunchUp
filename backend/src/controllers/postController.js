@@ -95,14 +95,19 @@ const getFeed = async (req, res) => {
 
 const getPostById = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const param = (req.params.id || '').trim();
+    if (!param) {
       return res.status(400).json({
         success: false,
-        message: "Invalid post ID format",
+        message: "Post identifier is required",
       });
     }
 
-    const post = await Post.findById(req.params.id).populate(
+    const query = mongoose.Types.ObjectId.isValid(param)
+      ? { $or: [{ _id: param }, { shareId: param }] }
+      : { shareId: param };
+
+    const post = await Post.findOne(query).populate(
       "user",
       "username displayName profilePicture totalPoints"
     );
@@ -112,6 +117,13 @@ const getPostById = async (req, res) => {
         success: false,
         message: "Post not found",
       });
+    }
+
+    // Ensure shareId exists on legacy posts
+    if (!post.shareId) {
+      const crypto = require("crypto");
+      post.shareId = "p_" + crypto.randomBytes(4).toString("hex");
+      await post.save();
     }
 
     res.status(200).json({

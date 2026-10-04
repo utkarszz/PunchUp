@@ -5,6 +5,7 @@ const protect = require("../middlewares/authMiddleware");
 const {
   createComment,
   getComments,
+  toggleCommentLike,
   deleteComment,
 } = require("../controllers/commentController");
 
@@ -19,6 +20,12 @@ router.post(
 router.get(
   "/:postId",
   getComments
+);
+
+router.post(
+  "/:commentId/like",
+  protect,
+  toggleCommentLike
 );
 
 router.delete(

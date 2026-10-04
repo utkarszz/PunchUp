@@ -17,6 +17,7 @@ const commentRoutes = require("./routes/commentRoutes");
 const followRoutes = require("./routes/followRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
+const focusRoutes = require("./routes/focusRoutes");
 
 const app = express();
 app.set('trust proxy', true);
@@ -81,6 +82,7 @@ app.use(
 );
 app.use("/api/search", searchRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/focus", focusRoutes);
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,

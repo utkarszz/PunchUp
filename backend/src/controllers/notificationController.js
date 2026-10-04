@@ -15,7 +15,8 @@ const getNotifications = async (req, res) => {
     })
       .populate("sender", "username displayName profilePicture")
       .populate("task", "title dueDate completed priority")
-      .populate("post", "content images")
+      .populate("post", "content images shareId")
+      .populate("comment", "content parentComment")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 
 const postSchema = new mongoose.Schema(
   {
@@ -32,13 +33,24 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    shareId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model(
-  "Post",
-  postSchema
-);
+postSchema.pre("save", function (next) {
+  if (!this.shareId) {
+    this.shareId = "p_" + crypto.randomBytes(4).toString("hex");
+  }
+  next();
+});
+
+module.exports = mongoose.model("Post", postSchema);

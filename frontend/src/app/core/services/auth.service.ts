@@ -1,10 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, filter, map, of, take, tap } from 'rxjs';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { BackendWakeupService } from './backend-wakeup.service';
-
 
 export interface UserProfile {
   _id: string;
@@ -24,7 +23,6 @@ export interface UserProfile {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
   private wakeupService = inject(BackendWakeupService);
 
   private currentUserSubject = new BehaviorSubject<UserProfile | null>(null);
@@ -55,6 +53,34 @@ export class AuthService {
     }
   }
 
+  /**
+   * Sanitizes a redirect URL to prevent open redirect vulnerabilities.
+   * Only allows valid relative application paths starting with '/' and not '//'.
+   */
+  public sanitizeReturnUrl(url: string | null | undefined): string {
+    if (!url || typeof url !== 'string') return '/community';
+    const trimmed = url.trim();
+    // Must start with '/' and must not start with '//' (protocol-relative) or contain '://'
+    if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.includes('://')) {
+      return trimmed;
+    }
+    return '/community';
+  }
+
+  public setReturnUrl(url: string): void {
+    const safe = this.sanitizeReturnUrl(url);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('punchup_return_url', safe);
+    }
+  }
+
+  public getAndClearReturnUrl(): string {
+    if (typeof window === 'undefined') return '/community';
+    const saved = sessionStorage.getItem('punchup_return_url');
+    sessionStorage.removeItem('punchup_return_url');
+    return this.sanitizeReturnUrl(saved);
+  }
+
   public handleOAuthCallback(token: string): Observable<UserProfile | null> {
     if (!token) {
       this.isLoadedSubject.next(true);
@@ -67,7 +93,8 @@ export class AuthService {
         if (user && user.isOnboarded === false) {
           this.router.navigate(['/onboarding'], { replaceUrl: true });
         } else {
-          this.router.navigate(['/community'], { replaceUrl: true });
+          const returnUrl = this.getAndClearReturnUrl();
+          this.router.navigateByUrl(returnUrl, { replaceUrl: true });
         }
       })
     );
@@ -89,7 +116,6 @@ export class AuthService {
       return of(null);
     }
 
-    // The interceptor will add the authorization header, but we also specify it here in case the interceptor isn't fully active
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
     return this.http.get<any>(`${environment.apiUrl}/api/users/me`, { headers }).pipe(
@@ -114,10 +140,20 @@ export class AuthService {
     window.location.href = environment.googleAuthUrl;
   }
 
-  public logout(): void {
+  public logout(redirectUrl?: string): void {
     localStorage.removeItem('token');
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']);
+    if (redirectUrl) {
+      this.setReturnUrl(redirectUrl);
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.sanitizeReturnUrl(redirectUrl) } });
+    } else {
+      this.router.navigate(['/login']);
+    }
+  }
+
+  public handleSessionExpired(currentUrl?: string): void {
+    const targetUrl = currentUrl || (typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/community');
+    this.logout(targetUrl);
   }
 
   public updateProfileLocally(updatedUser: UserProfile): void {

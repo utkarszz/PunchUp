@@ -55,6 +55,10 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'community/post/:id',
+    loadComponent: () => import('./pages/community/post-detail/post-detail.component').then(m => m.PostDetailComponent)
+  },
+  {
     path: 'community',
     loadComponent: () => import('./pages/community/community.component').then(m => m.CommunityComponent),
     canActivate: [authGuard]

@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 
 export interface Post {
   _id: string;
+  shareId?: string;
   content: string;
   images?: string[];
   user: {
@@ -30,6 +31,9 @@ export interface Comment {
     profilePicture?: string;
     totalPoints?: number;
   };
+  parentComment?: string | { _id: string; user?: { username?: string; displayName?: string } };
+  likes?: string[];
+  replies?: Comment[];
   createdAt: string;
 }
 
@@ -40,6 +44,10 @@ export class PostService {
 
   getFeed(): Observable<{ success: boolean; posts: Post[] }> {
     return this.http.get<{ success: boolean; posts: Post[] }>(`${this.base}/posts`);
+  }
+
+  getPostById(postIdOrShareId: string): Observable<{ success: boolean; post: Post }> {
+    return this.http.get<{ success: boolean; post: Post }>(`${this.base}/posts/${postIdOrShareId}`);
   }
 
   createPost(content: string, images?: string[]): Observable<{ success: boolean; post: Post }> {
@@ -58,8 +66,16 @@ export class PostService {
     return this.http.get<{ success: boolean; comments: Comment[] }>(`${this.base}/comments/${postId}`);
   }
 
-  addComment(postId: string, content: string): Observable<{ success: boolean; comment: Comment }> {
-    return this.http.post<{ success: boolean; comment: Comment }>(`${this.base}/comments/${postId}`, { content });
+  addComment(postId: string, content: string, parentCommentId?: string): Observable<{ success: boolean; comment: Comment }> {
+    const payload: { content: string; parentCommentId?: string } = { content };
+    if (parentCommentId) {
+      payload.parentCommentId = parentCommentId;
+    }
+    return this.http.post<{ success: boolean; comment: Comment }>(`${this.base}/comments/${postId}`, payload);
+  }
+
+  likeComment(commentId: string): Observable<{ success: boolean; liked: boolean; likesCount: number }> {
+    return this.http.post<{ success: boolean; liked: boolean; likesCount: number }>(`${this.base}/comments/${commentId}/like`, {});
   }
 
   // Save is a toggle: POST to save, DELETE to unsave

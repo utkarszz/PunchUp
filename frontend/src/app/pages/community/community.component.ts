@@ -274,37 +274,152 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                 </svg>
                 <span>{{ post.saves?.length || 0 }}</span>
               </button>
+
+              <button class="action-btn" (click)="sharePost(post)" title="Share link to post">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                <span>Share</span>
+              </button>
             </div>
 
             <!-- Comments -->
             <div class="comments-section" *ngIf="openCommentPostId === post._id">
               <div class="comments-list">
-                <div class="comment-item" *ngFor="let c of (commentMap[post._id] || [])">
-                  <img
-                    [src]="c.user.profilePicture || 'assets/default-avatar.png'"
-                    class="comment-avatar"
-                    [alt]="c.user.username"
-                    onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=c'"
-                  />
-                  <div class="comment-body" style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                      <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
-                        <span class="comment-author">{{ c.user.displayName || c.user.username }}</span>
-                        <app-league-badge [points]="c.user.totalPoints || 0"></app-league-badge>
+                <div class="comment-thread" *ngFor="let c of getRootComments(post._id)">
+                  <div class="comment-item">
+                    <img
+                      [src]="c.user.profilePicture || 'assets/default-avatar.png'"
+                      class="comment-avatar"
+                      [alt]="c.user.username"
+                      onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=c'"
+                    />
+                    <div class="comment-body" style="flex: 1;">
+                      <div class="comment-header-row">
+                        <div class="comment-author-badge">
+                          <a [routerLink]="['/user', c.user.username]" class="comment-author">{{ c.user.displayName || c.user.username }}</a>
+                          <app-league-badge [points]="c.user.totalPoints || 0"></app-league-badge>
+                        </div>
+                        <span class="comment-time">{{ getRelativeTime(c.createdAt) }}</span>
                       </div>
-                      <button 
-                        *ngIf="c.user._id === currentUserId || post.user._id === currentUserId" 
-                        class="btn-icon delete-comment-btn" 
-                        (click)="deleteComment(post, c._id)"
-                        title="Delete Comment"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                      </button>
+
+                      <p class="comment-text">{{ c.content }}</p>
+
+                      <div class="comment-actions-bar">
+                        <!-- Comment Like -->
+                        <button
+                          class="comment-action-btn"
+                          [class.liked]="isCommentLiked(c)"
+                          (click)="toggleCommentLike(c)"
+                          title="Like comment"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                          </svg>
+                          <span>{{ c.likes?.length || 0 }}</span>
+                        </button>
+
+                        <!-- Reply Button -->
+                        <button
+                          class="comment-action-btn reply-btn"
+                          (click)="openReplyBox(post._id, c)"
+                          title="Reply to comment"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
+                            <polyline points="7 6 3 10 7 14"></polyline>
+                          </svg>
+                          <span>Reply</span>
+                        </button>
+
+                        <!-- Delete Button -->
+                        <button 
+                          *ngIf="canDeleteComment(post, c)" 
+                          class="btn-icon delete-comment-btn" 
+                          (click)="deleteComment(post, c._id)"
+                          title="Delete Comment"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+
+                      <!-- Compact Inline Reply Composer -->
+                      <div class="reply-composer animate-fade-in" *ngIf="activeReplyMap[post._id] === c._id">
+                        <div class="replying-to-bar">
+                          <span>Replying to <strong>&#64;{{ c.user.username }}</strong></span>
+                          <button class="btn-icon close-reply-btn" (click)="cancelReply(post._id)" title="Cancel">×</button>
+                        </div>
+                        <div class="reply-input-row">
+                          <input
+                            type="text"
+                            class="input input-sm"
+                            [(ngModel)]="replyDraftMap[post._id]"
+                            [placeholder]="'Reply to @' + c.user.username + '...'"
+                            (keydown.enter)="submitReply(post, c)"
+                          />
+                          <button class="btn btn-primary btn-sm" (click)="submitReply(post, c)" [disabled]="!replyDraftMap[post._id]?.trim()">
+                            Reply
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <p class="comment-text">{{ c.content }}</p>
+                  </div>
+
+                  <!-- Threaded Child Replies -->
+                  <div class="replies-container" *ngIf="getRepliesFor(post._id, c._id).length > 0">
+                    <div class="reply-item animate-fade-in" *ngFor="let reply of getRepliesFor(post._id, c._id)">
+                      <img
+                        [src]="reply.user.profilePicture || 'assets/default-avatar.png'"
+                        class="comment-avatar reply-avatar"
+                        [alt]="reply.user.username"
+                        onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=r'"
+                      />
+                      <div class="comment-body" style="flex: 1;">
+                        <div class="comment-header-row">
+                          <div class="comment-author-badge">
+                            <a [routerLink]="['/user', reply.user.username]" class="comment-author">{{ reply.user.displayName || reply.user.username }}</a>
+                            <app-league-badge [points]="reply.user.totalPoints || 0"></app-league-badge>
+                          </div>
+                          <span class="comment-time">{{ getRelativeTime(reply.createdAt) }}</span>
+                        </div>
+                        <p class="comment-text">
+                          <span class="reply-mention">&#64;{{ c.user.username }}</span>
+                          {{ reply.content }}
+                        </p>
+                        <div class="comment-actions-bar">
+                          <button
+                            class="comment-action-btn"
+                            [class.liked]="isCommentLiked(reply)"
+                            (click)="toggleCommentLike(reply)"
+                            title="Like comment"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span>{{ reply.likes?.length || 0 }}</span>
+                          </button>
+
+                          <button 
+                            *ngIf="canDeleteComment(post, reply)" 
+                            class="btn-icon delete-comment-btn" 
+                            (click)="deleteComment(post, reply._id)"
+                            title="Delete Comment"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -316,7 +431,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   placeholder="Write a comment..."
                   (keydown.enter)="submitComment(post)"
                 />
-                <button class="btn btn-primary btn-sm" (click)="submitComment(post)">Send</button>
+                <button class="btn btn-primary btn-sm" (click)="submitComment(post)" [disabled]="!commentDraft[post._id]?.trim()">Send</button>
               </div>
             </div>
           </article>
@@ -1053,6 +1168,141 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       color: var(--text-primary);
     }
 
+    .comment-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .comment-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .comment-author-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .comment-time {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .comment-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.2rem;
+    }
+
+    .comment-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--radius);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .comment-action-btn:hover {
+      color: var(--text-primary);
+      background: var(--surface-hover);
+    }
+
+    .comment-action-btn.liked {
+      color: #ef4444;
+    }
+
+    .comment-action-btn.liked svg {
+      fill: currentColor;
+    }
+
+    .reply-composer {
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-top: 0.35rem;
+    }
+
+    .replying-to-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .close-reply-btn {
+      font-size: 1rem;
+      line-height: 1;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    .close-reply-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .reply-input-row {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .reply-input-row .input-sm {
+      flex: 1;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8125rem;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Replies Container */
+    .replies-container {
+      margin-left: 2rem;
+      padding-left: 0.75rem;
+      border-left: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+      margin-top: 0.25rem;
+    }
+
+    .reply-item {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .reply-avatar {
+      width: 24px;
+      height: 24px;
+    }
+
+    .reply-mention {
+      color: var(--accent);
+      font-weight: 600;
+      margin-right: 0.25rem;
+      font-size: 0.8125rem;
+    }
+
     .delete-comment-btn {
       padding: 0;
       min-width: 20px;
@@ -1076,6 +1326,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     .comment-text {
       font-size: 0.875rem;
       color: var(--text-secondary);
+      line-height: 1.4;
+      word-break: break-word;
     }
 
     .comment-input-row {
@@ -1269,6 +1521,8 @@ export class CommunityComponent implements OnInit, OnDestroy {
   suggestions: FollowUser[] = [];
   commentMap: Record<string, Comment[]> = {};
   commentDraft: Record<string, string> = {};
+  activeReplyMap: Record<string, string | null> = {};
+  replyDraftMap: Record<string, string> = {};
   followingSet = new Set<string>();
   followLoadingSet = new Set<string>();
 
@@ -1482,16 +1736,127 @@ export class CommunityComponent implements OnInit, OnDestroy {
     });
   }
 
+  getRootComments(postId: string): Comment[] {
+    const list = this.commentMap[postId] || [];
+    return list.filter(c => !c.parentComment);
+  }
+
+  getRepliesFor(postId: string, commentId: string): Comment[] {
+    const list = this.commentMap[postId] || [];
+    return list.filter(c => {
+      const pid = typeof c.parentComment === 'object' ? c.parentComment?._id : c.parentComment;
+      return pid === commentId;
+    });
+  }
+
+  openReplyBox(postId: string, comment: Comment) {
+    this.activeReplyMap[postId] = comment._id;
+    this.replyDraftMap[postId] = '';
+  }
+
+  cancelReply(postId: string) {
+    this.activeReplyMap[postId] = null;
+    this.replyDraftMap[postId] = '';
+  }
+
+  submitReply(post: Post, parentComment: Comment) {
+    const content = (this.replyDraftMap[post._id] || '').trim();
+    if (!content) return;
+
+    this.postService.addComment(post._id, content, parentComment._id).subscribe({
+      next: (res) => {
+        if (!this.commentMap[post._id]) this.commentMap[post._id] = [];
+        const me = this.authService.currentUserValue;
+        const enriched: Comment = {
+          ...res.comment,
+          parentComment: parentComment._id,
+          user: {
+            _id: me?._id || '',
+            username: me?.username || '',
+            displayName: me?.displayName || '',
+            profilePicture: me?.profilePicture || '',
+            totalPoints: me?.totalPoints || 0
+          },
+          likes: []
+        };
+        this.commentMap[post._id].push(enriched);
+        post.commentsCount = (post.commentsCount || 0) + 1;
+        this.activeReplyMap[post._id] = null;
+        this.replyDraftMap[post._id] = '';
+        this.toastService.showSuccess('Reply sent!');
+      },
+      error: (err) => {
+        this.toastService.showError(err?.error?.message || 'Failed to post reply');
+      }
+    });
+  }
+
+  isCommentLiked(comment: Comment): boolean {
+    return !!comment.likes && comment.likes.includes(this.currentUserId);
+  }
+
+  toggleCommentLike(comment: Comment) {
+    if (!comment.likes) comment.likes = [];
+    const wasLiked = this.isCommentLiked(comment);
+    if (wasLiked) {
+      comment.likes = comment.likes.filter(id => id !== this.currentUserId);
+    } else {
+      comment.likes.push(this.currentUserId);
+    }
+
+    this.postService.likeComment(comment._id).subscribe({
+      error: () => {
+        if (wasLiked) {
+          comment.likes!.push(this.currentUserId);
+        } else {
+          comment.likes = comment.likes!.filter(id => id !== this.currentUserId);
+        }
+      }
+    });
+  }
+
+  canDeleteComment(post: Post, comment: Comment): boolean {
+    return comment.user._id === this.currentUserId || post.user._id === this.currentUserId;
+  }
+
+  sharePost(post: Post) {
+    const shareRef = post.shareId || post._id;
+    const url = `${window.location.origin}/community/post/${shareRef}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        this.toastService.showSuccess('Post link copied to clipboard!');
+      }).catch(() => {
+        if (navigator.share) {
+          navigator.share({ title: 'PunchUp Post', url }).catch(() => {});
+        } else {
+          prompt('Copy post URL:', url);
+        }
+      });
+    } else if (navigator.share) {
+      navigator.share({ title: 'PunchUp Post', url }).catch(() => {});
+    } else {
+      prompt('Copy post URL:', url);
+    }
+  }
+
   deleteComment(post: Post, commentId: string) {
     if (confirm('Are you sure you want to delete this comment?')) {
       this.postService.deleteComment(commentId).subscribe({
         next: () => {
           if (this.commentMap[post._id]) {
-            this.commentMap[post._id] = this.commentMap[post._id].filter(c => c._id !== commentId);
+            this.commentMap[post._id] = this.commentMap[post._id].filter(c => {
+              if (c._id === commentId) return false;
+              const pid = typeof c.parentComment === 'object' ? c.parentComment?._id : c.parentComment;
+              return pid !== commentId;
+            });
           }
           post.commentsCount = Math.max(0, (post.commentsCount || 0) - 1);
+          this.toastService.showSuccess('Comment deleted');
         },
-        error: (err) => console.error('Failed to delete comment:', err)
+        error: (err) => {
+          this.toastService.showError(err?.error?.message || 'Failed to delete comment');
+        }
       });
     }
   }

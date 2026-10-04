@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TaskService, Task } from '../../core/services/task.service';
+import { FocusService } from '../../core/services/focus.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ReminderService } from '../../core/services/reminder.service';
 
@@ -12,20 +13,57 @@ import { ReminderService } from '../../core/services/reminder.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="tasks-container animate-fade-in">
-      <!-- Title Header -->
-      <header class="tasks-header">
-        <div>
-          <h1>Workspace Tasks</h1>
-          <p class="subtitle">Organize and complete your daily consistency objectives.</p>
+      <!-- 1. Focus Hub Main View -->
+      <div class="focus-hub-view" *ngIf="activeFocusView === 'hub'">
+        <header class="tasks-header">
+          <div>
+            <h1>Focus</h1>
+            <p class="subtitle">Organize your consistency tasks and track deep focus sessions.</p>
+          </div>
+        </header>
+
+        <!-- Split Action Area: Top / Primary actions with equal visual importance -->
+        <div class="focus-split-grid animate-slide-up">
+          <button type="button" class="focus-action-tile create-tile" (click)="setFocusView('create-task')">
+            <div class="tile-icon-wrap create-wrap">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+            <div class="tile-info">
+              <span class="tile-title">Create Task</span>
+              <span class="tile-desc">Add consistency goals with priorities & reminders</span>
+            </div>
+            <svg class="tile-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
+          <button type="button" class="focus-action-tile timer-tile" (click)="setFocusView('timer')">
+            <div class="tile-icon-wrap timer-wrap" [class.pulse-live]="focusService.isRunning$ | async">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="tile-info">
+              <div class="tile-title-row">
+                <span class="tile-title">Focus Timer</span>
+                <span class="running-pill" *ngIf="focusService.isRunning$ | async">Live</span>
+              </div>
+              <span class="tile-desc" *ngIf="!(focusService.isRunning$ | async)">
+                Today: {{ (focusService.stats$ | async)?.dailyFormatted || '0m' }}
+              </span>
+              <span class="tile-desc running-desc" *ngIf="focusService.isRunning$ | async">
+                Running: {{ focusService.formatSeconds((focusService.elapsedSeconds$ | async) || 0) }}
+              </span>
+            </div>
+            <svg class="tile-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
         </div>
-        <button (click)="openCreateModal()" class="btn btn-primary create-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Create Task</span>
-        </button>
-      </header>
 
       <!-- Filter Bar -->
       <section class="card filter-card">
@@ -287,6 +325,257 @@ import { ReminderService } from '../../core/services/reminder.service';
         </div>
 
       </section>
+      </div> <!-- End of Focus Hub View -->
+
+      <!-- 2. Create Task Dedicated Flow -->
+      <div class="create-task-view animate-fade-in" *ngIf="activeFocusView === 'create-task'">
+        <div class="section-nav-header animate-slide-up">
+          <button type="button" class="btn btn-secondary btn-sm back-nav-btn" (click)="setFocusView('hub')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Focus</span>
+          </button>
+          <h2>Create Task</h2>
+        </div>
+
+        <div class="card inline-form-card animate-slide-up">
+          <form (submit)="saveTask(); $event.preventDefault()" class="modal-form">
+            <div class="form-group">
+              <label>Task Title *</label>
+              <input type="text" [(ngModel)]="modalTask.title" name="inline_title" required placeholder="e.g. Complete Spring Boot LLD" />
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea [(ngModel)]="modalTask.description" name="inline_description" rows="3" placeholder="Describe the requirements..."></textarea>
+            </div>
+
+            <div class="form-row form-row-triple">
+              <div class="form-group">
+                <label>Priority</label>
+                <select [(ngModel)]="modalTask.priority" name="inline_priority">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Reminder</label>
+                <select [(ngModel)]="modalTask.reminderInterval" name="inline_reminderInterval" (change)="onReminderIntervalChange()">
+                  <option [ngValue]="0">No reminder</option>
+                  <option [ngValue]="1">Every 1 hour</option>
+                  <option [ngValue]="2">Every 2 hours</option>
+                  <option [ngValue]="3">Every 3 hours</option>
+                  <option [ngValue]="4">Every 4 hours</option>
+                  <option [ngValue]="5">Every 5 hours</option>
+                </select>
+                <span class="form-hint" *ngIf="modalTask.reminderInterval && modalTask.reminderInterval > 0">
+                  Reminder: Every {{ modalTask.reminderInterval }} hour{{ modalTask.reminderInterval > 1 ? 's' : '' }}
+                </span>
+              </div>
+              <div class="form-group form-group-due">
+                <label>Due Date & Time (optional)</label>
+                <input type="datetime-local" [(ngModel)]="modalTask.dueDate" name="inline_dueDate" />
+                <span class="form-hint">Leave blank to automatically set deadline to 24 hours from creation.</span>
+              </div>
+            </div>
+
+            <div class="due-presets-row">
+              <span class="preset-label">Quick Due:</span>
+              <button type="button" class="btn-preset" (click)="setDuePreset(1)">+1h</button>
+              <button type="button" class="btn-preset" (click)="setDuePreset(3)">+3h</button>
+              <button type="button" class="btn-preset" (click)="setDuePreset(24)">Tomorrow</button>
+            </div>
+
+            <!-- Permission prompt card -->
+            <div class="permission-prompt-card" *ngIf="showPermissionPrompt">
+              <div class="prompt-content">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <div class="prompt-text">
+                  <p>PunchUp needs notification permission to remind you about your tasks.</p>
+                </div>
+              </div>
+              <div class="prompt-actions">
+                <button type="button" class="btn btn-sm btn-primary" (click)="confirmPermission()">Enable Notifications</button>
+                <button type="button" class="btn btn-sm btn-secondary" (click)="dismissPermissionPrompt()">Cancel</button>
+              </div>
+            </div>
+
+            <div class="permission-denied-alert" *ngIf="permissionDeniedMessage">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ permissionDeniedMessage }}</span>
+            </div>
+
+            <div class="modal-buttons">
+              <button type="button" (click)="setFocusView('hub')" class="btn btn-secondary">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="!modalTask.title || !modalTask.title.trim()">Create Task</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 3. Focus Timer Dedicated View -->
+      <div class="focus-timer-view animate-fade-in" *ngIf="activeFocusView === 'timer'">
+        <div class="section-nav-header animate-slide-up">
+          <button type="button" class="btn btn-secondary btn-sm back-nav-btn" (click)="setFocusView('hub')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Focus</span>
+          </button>
+          <h2>Focus Timer</h2>
+        </div>
+
+        <div class="timer-view-wrapper animate-slide-up">
+          <div class="card timer-display-card">
+            <div
+              class="timer-status-badge"
+              [class.active-badge]="(focusService.isRunning$ | async) && !(focusService.isPaused$ | async)"
+              [class.paused-badge]="focusService.isPaused$ | async"
+            >
+              <span class="status-pulse-dot" *ngIf="(focusService.isRunning$ | async) && !(focusService.isPaused$ | async)"></span>
+              <span *ngIf="!(focusService.isRunning$ | async)">Ready for Deep Focus</span>
+              <span *ngIf="(focusService.isRunning$ | async) && !(focusService.isPaused$ | async)">Focus Session in Progress</span>
+              <span *ngIf="(focusService.isRunning$ | async) && (focusService.isPaused$ | async)">Focus Session Paused</span>
+            </div>
+
+            <div class="digital-timer-clock">
+              {{ focusService.formatSeconds((focusService.elapsedSeconds$ | async) || 0) }}
+            </div>
+
+            <!-- Ongoing Notification Status Indicator -->
+            <div class="timer-notif-pill granted" *ngIf="(focusService.isRunning$ | async) && hasNotificationPermission">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+              <span>{{ (focusService.isPaused$ | async) ? 'Paused browser notification active' : 'Live timer notification active in browser' }}</span>
+            </div>
+
+            <!-- Permission Denied Warning in Timer -->
+            <div class="timer-notif-pill denied" *ngIf="timerPermissionDeniedMessage">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ timerPermissionDeniedMessage }}</span>
+            </div>
+
+            <p class="timer-subtext" *ngIf="!(focusService.isRunning$ | async)">
+              Start an uninterrupted session to build your daily focus time.
+            </p>
+            <p class="timer-subtext" *ngIf="(focusService.isRunning$ | async) && !(focusService.isPaused$ | async)">
+              Stay in the zone. Timer persists across page refreshes and updates your notification bar.
+            </p>
+            <p class="timer-subtext" *ngIf="(focusService.isRunning$ | async) && (focusService.isPaused$ | async)">
+              Timer is currently paused. Click Resume when you are ready to continue your session.
+            </p>
+
+            <div class="timer-controls-row">
+              <!-- When NOT running -->
+              <button
+                *ngIf="!(focusService.isRunning$ | async)"
+                type="button"
+                class="btn btn-primary btn-lg timer-action-btn start-btn"
+                (click)="onStartTimerClick()"
+                [disabled]="isTimerLoading"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Start Focus Timer</span>
+              </button>
+
+              <!-- When running AND NOT paused -->
+              <ng-container *ngIf="(focusService.isRunning$ | async) && !(focusService.isPaused$ | async)">
+                <button
+                  type="button"
+                  class="btn btn-warning btn-lg timer-action-btn pause-btn"
+                  (click)="pauseFocusTimer()"
+                  [disabled]="isTimerLoading"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                    <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                  </svg>
+                  <span>Pause</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-danger btn-lg timer-action-btn stop-btn"
+                  (click)="stopFocusTimer()"
+                  [disabled]="isTimerLoading"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                  </svg>
+                  <span>Stop & Save</span>
+                </button>
+              </ng-container>
+
+              <!-- When running AND paused -->
+              <ng-container *ngIf="(focusService.isRunning$ | async) && (focusService.isPaused$ | async)">
+                <button
+                  type="button"
+                  class="btn btn-success btn-lg timer-action-btn resume-btn"
+                  (click)="resumeFocusTimer()"
+                  [disabled]="isTimerLoading"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>Resume</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-danger btn-lg timer-action-btn stop-btn"
+                  (click)="stopFocusTimer()"
+                  [disabled]="isTimerLoading"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                  </svg>
+                  <span>Stop & Save</span>
+                </button>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Accumulated Focus Time Stats Card -->
+          <div class="card timer-stats-card">
+            <h3 class="stats-card-title">Accumulated Focus Time</h3>
+            <div class="timer-stats-grid">
+              <div class="timer-stat-item">
+                <span class="stat-label">Today</span>
+                <span class="stat-value highlight">{{ (focusService.stats$ | async)?.dailyFormatted || '0m' }}</span>
+                <span class="stat-hint">Resets at local midnight</span>
+              </div>
+              <div class="timer-stat-item">
+                <span class="stat-label">This Week</span>
+                <span class="stat-value">{{ (focusService.stats$ | async)?.weeklyFormatted || '0m' }}</span>
+                <span class="stat-hint">Current week total</span>
+              </div>
+              <div class="timer-stat-item">
+                <span class="stat-label">Overall</span>
+                <span class="stat-value">{{ (focusService.stats$ | async)?.overallFormatted || '0m' }}</span>
+                <span class="stat-hint">Lifetime accumulated</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Task Modal (Create & Edit) -->
       <div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
@@ -368,6 +657,33 @@ import { ReminderService } from '../../core/services/reminder.service';
           </form>
         </div>
       </div>
+
+      <!-- Dedicated Focus Timer Permission Modal -->
+      <div class="modal-backdrop" *ngIf="showTimerPermissionModal" (click)="dismissTimerPermissionModal()">
+        <div class="modal-content timer-perm-modal animate-scale-up" (click)="$event.stopPropagation()">
+          <div class="perm-modal-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </div>
+          <h3 class="modal-title" style="text-align: center; margin: 0;">Focus Timer Notifications</h3>
+          <p class="timer-perm-text">
+            Allow PunchUp notifications to keep your active timer visible when you leave or minimize this tab.
+          </p>
+          <div class="timer-perm-actions">
+            <button type="button" class="btn btn-primary btn-full" (click)="confirmTimerPermission()">
+              Allow Notifications & Start
+            </button>
+            <button type="button" class="btn btn-secondary btn-full" (click)="startWithoutTimerNotification()">
+              Start Without Notifications
+            </button>
+            <button type="button" class="btn-ghost" (click)="dismissTimerPermissionModal()">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -386,12 +702,463 @@ import { ReminderService } from '../../core/services/reminder.service';
       justify-content: space-between;
       align-items: center;
       gap: 1rem;
+      margin-bottom: 1.25rem;
     }
 
     .subtitle {
       font-size: 0.9rem;
       color: var(--text-secondary);
       margin-top: 0.25rem;
+    }
+
+    /* Focus Split Grid (Equal visual importance) */
+    .focus-split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 580px) {
+      .focus-split-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+    }
+
+    .focus-action-tile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-sm);
+      width: 100%;
+    }
+
+    .focus-action-tile:hover {
+      border-color: var(--border-glow);
+      background: var(--surface-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .tile-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .create-wrap {
+      background: rgba(59, 130, 246, 0.12);
+      color: #3b82f6;
+    }
+
+    .timer-wrap {
+      background: rgba(139, 92, 246, 0.12);
+      color: #8b5cf6;
+    }
+
+    .pulse-live {
+      animation: livePulse 2s infinite ease-in-out;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0); }
+    }
+
+    .tile-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+
+    .tile-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tile-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .running-pill {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #ef4444;
+      color: #fff;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .tile-desc {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+
+    .running-desc {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tile-arrow {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+
+    .focus-action-tile:hover .tile-arrow {
+      transform: translateX(3px);
+      color: var(--text-primary);
+    }
+
+    /* Section Navigation Header */
+    .section-nav-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-nav-header h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .back-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Inline Task Card */
+    .inline-form-card {
+      padding: 1.75rem;
+    }
+
+    .due-presets-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: -0.5rem;
+    }
+
+    .preset-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .btn-preset {
+      padding: 0.2rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-preset:hover {
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+
+    /* Timer View */
+    .timer-view-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .timer-display-card {
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .timer-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .timer-status-badge.active-badge {
+      background: rgba(139, 92, 246, 0.12);
+      color: #8b5cf6;
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+
+    .timer-status-badge.paused-badge {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .status-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #8b5cf6;
+      animation: pulseDot 1.5s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .timer-notif-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .timer-notif-pill.granted {
+      background: rgba(59, 130, 246, 0.12);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .timer-notif-pill.denied {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      max-width: 440px;
+      text-align: left;
+    }
+
+    .digital-timer-clock {
+      font-family: var(--font-mono, monospace);
+      font-size: 4rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: var(--text-primary);
+      line-height: 1.1;
+      padding: 0.5rem 0;
+    }
+
+    @media (max-width: 480px) {
+      .digital-timer-clock {
+        font-size: 2.75rem;
+      }
+
+      .timer-controls-row {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .timer-action-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .timer-subtext {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .timer-controls-row {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .timer-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.85rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .timer-action-btn.pause-btn {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: #1e1b4b;
+    }
+
+    .timer-action-btn.pause-btn:hover {
+      background: #d97706;
+      border-color: #d97706;
+    }
+
+    .timer-action-btn.resume-btn {
+      background: #10b981;
+      border-color: #10b981;
+      color: #fff;
+    }
+
+    .timer-action-btn.resume-btn:hover {
+      background: #059669;
+      border-color: #059669;
+    }
+
+    .timer-action-btn.stop-btn {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #fff;
+    }
+
+    .timer-action-btn.stop-btn:hover {
+      background: #dc2626;
+    }
+
+    /* Dedicated Focus Timer Permission Modal Styles */
+    .timer-perm-modal {
+      max-width: 440px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem 1.75rem;
+    }
+
+    .perm-modal-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-perm-text {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .timer-perm-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    .btn-full {
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem 1rem;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.4rem;
+      font-size: 0.85rem;
+      transition: color 0.15s ease;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      text-decoration: underline;
+    }
+
+    .timer-stats-card {
+      padding: 1.5rem;
+    }
+
+    .stats-card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .timer-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 580px) {
+      .timer-stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .timer-stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 1rem;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .stat-value.highlight {
+      color: var(--accent);
+    }
+
+    .stat-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted);
     }
 
     /* Filter Card */
@@ -921,6 +1688,10 @@ export class TasksComponent implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   public reminderService = inject(ReminderService);
+  public focusService = inject(FocusService);
+
+  public activeFocusView: 'hub' | 'create-task' | 'timer' = 'hub';
+  public isTimerLoading = false;
 
   public allTasks: Task[] = [];
   public filteredTasks: Task[] = [];
@@ -949,9 +1720,128 @@ export class TasksComponent implements OnInit, OnDestroy {
   private activeEditingId: string | null = null;
   private timerSubscription: any = null;
 
+  // Focus Timer notification modal state
+  public showTimerPermissionModal = false;
+  public timerPermissionDeniedMessage = '';
+
+  public get hasNotificationPermission(): boolean {
+    return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+  }
+
+  public setFocusView(view: 'hub' | 'create-task' | 'timer') {
+    this.activeFocusView = view;
+    if (view === 'create-task') {
+      this.isEditMode = false;
+      this.activeEditingId = null;
+      this.modalTask = this.resetModalTask();
+    }
+  }
+
+  public setDuePreset(hours: number) {
+    const d = new Date(Date.now() + hours * 3600 * 1000);
+    const pad = (n: number) => n < 10 ? '0' + n : String(n);
+    const localIso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    this.modalTask.dueDate = localIso;
+  }
+
+  public startFocusTimer() {
+    this.isTimerLoading = true;
+    this.focusService.startSession().subscribe({
+      next: () => {
+        this.isTimerLoading = false;
+        this.toastService.showSuccess('Focus session started! Stay in the zone.');
+      },
+      error: (err) => {
+        this.isTimerLoading = false;
+        this.toastService.showError(err?.error?.message || 'Could not start focus session');
+      }
+    });
+  }
+
+  public stopFocusTimer() {
+    this.isTimerLoading = true;
+    this.focusService.stopSession().subscribe({
+      next: () => {
+        this.isTimerLoading = false;
+        this.toastService.showSuccess('Focus session completed and saved!');
+        this.focusService.getStats().subscribe();
+      },
+      error: (err) => {
+        this.isTimerLoading = false;
+        this.toastService.showError(err?.error?.message || 'Could not stop focus session');
+      }
+    });
+  }
+
+  /** Called when user taps "Start Focus Timer". Checks notification permission before starting. */
+  public onStartTimerClick() {
+    this.timerPermissionDeniedMessage = '';
+
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      // Notifications not supported — start directly
+      this.startFocusTimer();
+      return;
+    }
+
+    const permission = Notification.permission;
+
+    if (permission === 'granted') {
+      // Already have permission — start immediately with notification
+      this.startFocusTimer();
+    } else if (permission === 'denied') {
+      // Permission permanently denied — start without notification, show hint
+      this.timerPermissionDeniedMessage = 'Browser notifications are blocked for PunchUp. You can enable them in your browser/site settings.';
+      this.startFocusTimer();
+    } else {
+      // 'default' — ask user explicitly because they triggered the timer
+      this.showTimerPermissionModal = true;
+    }
+  }
+
+  /** User chose "Allow Notifications & Start" in the timer permission modal. */
+  public async confirmTimerPermission() {
+    this.showTimerPermissionModal = false;
+    const granted = await this.reminderService.requestPermission();
+    if (granted) {
+      this.timerPermissionDeniedMessage = '';
+    } else {
+      const status = this.reminderService.getPermissionState();
+      if (status === 'denied') {
+        this.timerPermissionDeniedMessage = 'Browser notifications are blocked for PunchUp. You can enable them in your browser/site settings.';
+      }
+    }
+    // Start the timer regardless of whether permission was granted
+    this.startFocusTimer();
+  }
+
+  /** User chose "Start Without Notifications" in the timer permission modal. */
+  public startWithoutTimerNotification() {
+    this.showTimerPermissionModal = false;
+    this.startFocusTimer();
+  }
+
+  /** User dismissed the timer permission modal (Cancel). Timer does NOT start. */
+  public dismissTimerPermissionModal() {
+    this.showTimerPermissionModal = false;
+  }
+
+  /** Pause the active focus session (local pause, no backend call). */
+  public pauseFocusTimer() {
+    this.focusService.pauseSession();
+  }
+
+  /** Resume the active focus session after a local pause. */
+  public resumeFocusTimer() {
+    this.focusService.resumeSession();
+  }
+
+
   ngOnInit() {
     this.updateInitialLimit();
     this.loadTasks();
+
+    this.focusService.syncActiveSession().subscribe();
+    this.focusService.getStats().subscribe();
 
     this.route.queryParams.subscribe((params: any) => {
       if (params['create'] === 'true') {
@@ -1124,7 +2014,7 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.showPermissionPrompt = false;
     this.permissionDeniedMessage = '';
     this.activeEditingId = null;
-    this.showModal = true;
+    this.setFocusView('create-task');
   }
 
   public openEditModal(task: Task) {
@@ -1239,8 +2129,9 @@ export class TasksComponent implements OnInit, OnDestroy {
       this.taskService.createTask(payload).subscribe((response: any) => {
         if (response.success) {
           this.loadTasks();
-          this.closeModal();
-          this.toastService.showSuccess('Task created successfully');
+          this.toastService.showSuccess('Task created successfully!');
+          // Return user to hub after creation
+          this.setFocusView('hub');
         }
       });
     }
