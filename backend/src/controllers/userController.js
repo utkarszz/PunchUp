@@ -271,26 +271,24 @@ const runMigration = async (req, res) => {
 
 const searchUsers = async (req, res) => {
   try {
-    const query = req.query.q?.trim();
+    const rawQuery = req.query.q ? req.query.q.trim().replace(/^@/, '') : '';
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 8));
 
-    if (!query) {
-      return res.status(400).json({
-        success: false,
-        message: "Search query is required",
-      });
+    const filter = { isBanned: { $ne: true } };
+
+    if (rawQuery) {
+      // Escape regex special characters to prevent ReDoS
+      const safeQuery = rawQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.username = {
+        $regex: safeQuery,
+        $options: 'i',
+      };
     }
 
-    // Escape regex special characters to prevent ReDoS
-    const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    const users = await User.find({
-      username: {
-        $regex: safeQuery,
-        $options: "i",
-      },
-    })
-      .select("username displayName profilePicture bio")
-      .limit(20);
+    const users = await User.find(filter)
+      .select('username displayName profilePicture totalPoints bio')
+      .sort(rawQuery ? { username: 1 } : { totalPoints: -1 })
+      .limit(limit);
 
     res.status(200).json({
       success: true,

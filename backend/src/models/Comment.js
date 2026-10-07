@@ -36,6 +36,13 @@ const commentSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,

@@ -8,13 +8,23 @@ import { AuthService } from '../../core/services/auth.service';
 import { UploadService } from '../../core/services/upload.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
+import { MentionDropdownComponent, MentionUser } from '../../shared/components/mention-dropdown/mention-dropdown.component';
+import { UserService } from '../../core/services/user.service';
+import {
+  getMentionTrigger,
+  applyMentionSelection,
+  formatContentWithMentions,
+  buildCommentTree,
+  ThreadComment,
+  MentionRef,
+} from '../../core/services/mention-utils';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-community',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LeagueBadgeComponent],
+  imports: [CommonModule, FormsModule, RouterLink, LeagueBadgeComponent, MentionDropdownComponent],
   template: `
     <div class="community-container animate-fade-in">
 
@@ -142,12 +152,26 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               alt="You"
               onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=me'"
             />
-            <textarea
-              class="composer-input"
-              [(ngModel)]="newPostContent"
-              placeholder="What are you working on today?"
-              rows="3"
-            ></textarea>
+            <div class="composer-input-wrapper" style="flex: 1; position: relative;">
+              <textarea
+                class="composer-input"
+                [(ngModel)]="newPostContent"
+                (input)="onPostComposerInput($event)"
+                (keydown)="onPostComposerKeyDown($event)"
+                placeholder="What are you working on today? Type @ to mention..."
+                rows="3"
+                #postComposerTextarea
+              ></textarea>
+              <app-mention-dropdown
+                [users]="mentionUsers"
+                [isOpen]="activeMentionContext === 'post' && isMentionOpen"
+                [selectedIndex]="mentionSelectedIndex"
+                [isLoading]="isMentionLoading"
+                position="bottom"
+                (userSelected)="onSelectMentionUser($event, 'post')"
+                (close)="closeMentionDropdown()"
+              ></app-mention-dropdown>
+            </div>
           </div>
 
           <!-- Image Previews -->
@@ -247,7 +271,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               <span class="post-time">{{ getRelativeTime(post.createdAt) }}</span>
             </div>
 
-            <p class="post-content">{{ post.content }}</p>
+            <p class="post-content" [innerHTML]="formatCommentText(post.content)"></p>
 
             <div class="post-images" *ngIf="post.images && post.images.length > 0">
               <img *ngFor="let img of post.images" [src]="img" class="post-image" alt="Post image" />
@@ -287,153 +311,147 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               </button>
             </div>
 
-            <!-- Comments -->
+            <!-- Comments Section -->
             <div class="comments-section" *ngIf="openCommentPostId === post._id">
               <div class="comments-list">
-                <div class="comment-thread" *ngFor="let c of getRootComments(post._id)">
-                  <div class="comment-item">
-                    <img
-                      [src]="c.user.profilePicture || 'assets/default-avatar.png'"
-                      class="comment-avatar"
-                      [alt]="c.user.username"
-                      onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=c'"
-                    />
-                    <div class="comment-body" style="flex: 1;">
-                      <div class="comment-header-row">
-                        <div class="comment-author-badge">
-                          <a [routerLink]="['/user', c.user.username]" class="comment-author">{{ c.user.displayName || c.user.username }}</a>
-                          <app-league-badge [points]="c.user.totalPoints || 0"></app-league-badge>
-                        </div>
-                        <span class="comment-time">{{ getRelativeTime(c.createdAt) }}</span>
-                      </div>
-
-                      <p class="comment-text">{{ c.content }}</p>
-
-                      <div class="comment-actions-bar">
-                        <!-- Comment Like -->
-                        <button
-                          class="comment-action-btn"
-                          [class.liked]="isCommentLiked(c)"
-                          (click)="toggleCommentLike(c)"
-                          title="Like comment"
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                          </svg>
-                          <span>{{ c.likes?.length || 0 }}</span>
-                        </button>
-
-                        <!-- Reply Button -->
-                        <button
-                          class="comment-action-btn reply-btn"
-                          (click)="openReplyBox(post._id, c)"
-                          title="Reply to comment"
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
-                            <polyline points="7 6 3 10 7 14"></polyline>
-                          </svg>
-                          <span>Reply</span>
-                        </button>
-
-                        <!-- Delete Button -->
-                        <button 
-                          *ngIf="canDeleteComment(post, c)" 
-                          class="btn-icon delete-comment-btn" 
-                          (click)="deleteComment(post, c._id)"
-                          title="Delete Comment"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          </svg>
-                        </button>
-                      </div>
-
-                      <!-- Compact Inline Reply Composer -->
-                      <div class="reply-composer animate-fade-in" *ngIf="activeReplyMap[post._id] === c._id">
-                        <div class="replying-to-bar">
-                          <span>Replying to <strong>&#64;{{ c.user.username }}</strong></span>
-                          <button class="btn-icon close-reply-btn" (click)="cancelReply(post._id)" title="Cancel">×</button>
-                        </div>
-                        <div class="reply-input-row">
-                          <input
-                            type="text"
-                            class="input input-sm"
-                            [(ngModel)]="replyDraftMap[post._id]"
-                            [placeholder]="'Reply to @' + c.user.username + '...'"
-                            (keydown.enter)="submitReply(post, c)"
-                          />
-                          <button class="btn btn-primary btn-sm" (click)="submitReply(post, c)" [disabled]="!replyDraftMap[post._id]?.trim()">
-                            Reply
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Threaded Child Replies -->
-                  <div class="replies-container" *ngIf="getRepliesFor(post._id, c._id).length > 0">
-                    <div class="reply-item animate-fade-in" *ngFor="let reply of getRepliesFor(post._id, c._id)">
-                      <img
-                        [src]="reply.user.profilePicture || 'assets/default-avatar.png'"
-                        class="comment-avatar reply-avatar"
-                        [alt]="reply.user.username"
-                        onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=r'"
-                      />
-                      <div class="comment-body" style="flex: 1;">
-                        <div class="comment-header-row">
-                          <div class="comment-author-badge">
-                            <a [routerLink]="['/user', reply.user.username]" class="comment-author">{{ reply.user.displayName || reply.user.username }}</a>
-                            <app-league-badge [points]="reply.user.totalPoints || 0"></app-league-badge>
-                          </div>
-                          <span class="comment-time">{{ getRelativeTime(reply.createdAt) }}</span>
-                        </div>
-                        <p class="comment-text">
-                          <span class="reply-mention">&#64;{{ c.user.username }}</span>
-                          {{ reply.content }}
-                        </p>
-                        <div class="comment-actions-bar">
-                          <button
-                            class="comment-action-btn"
-                            [class.liked]="isCommentLiked(reply)"
-                            (click)="toggleCommentLike(reply)"
-                            title="Like comment"
-                          >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                            </svg>
-                            <span>{{ reply.likes?.length || 0 }}</span>
-                          </button>
-
-                          <button 
-                            *ngIf="canDeleteComment(post, reply)" 
-                            class="btn-icon delete-comment-btn" 
-                            (click)="deleteComment(post, reply._id)"
-                            title="Delete Comment"
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div class="comment-thread" *ngFor="let c of getCommentTree(post._id)">
+                  <ng-container *ngTemplateOutlet="commentThreadNode; context: { c: c, depth: 0, post: post }"></ng-container>
+                </div>
+                <div class="empty-comments-state" *ngIf="getCommentTree(post._id).length === 0">
+                  <p>No comments yet. Be the first to share your thoughts!</p>
                 </div>
               </div>
-              <div class="comment-input-row">
+              <div class="comment-input-row" style="position: relative;">
                 <input
                   type="text"
                   class="input"
                   [(ngModel)]="commentDraft[post._id]"
-                  placeholder="Write a comment..."
-                  (keydown.enter)="submitComment(post)"
+                  (input)="onCommentInput($event, post._id)"
+                  (keydown)="onCommentKeyDown($event, post)"
+                  placeholder="Write a comment... Type @ to mention"
+                  #mainCommentInput
                 />
                 <button class="btn btn-primary btn-sm" (click)="submitComment(post)" [disabled]="!commentDraft[post._id]?.trim()">Send</button>
+                <app-mention-dropdown
+                  [users]="mentionUsers"
+                  [isOpen]="activeMentionContext === 'comment_' + post._id && isMentionOpen"
+                  [selectedIndex]="mentionSelectedIndex"
+                  [isLoading]="isMentionLoading"
+                  position="top"
+                  (userSelected)="onSelectMentionUser($event, 'comment_' + post._id)"
+                  (close)="closeMentionDropdown()"
+                ></app-mention-dropdown>
               </div>
             </div>
+
+            <!-- Recursive Thread Node Template -->
+            <ng-template #commentThreadNode let-c="c" let-depth="depth" let-post="post">
+              <div
+                class="comment-item-wrapper"
+                [class.is-nested]="depth > 0"
+                [class.capped-nest]="depth >= 2"
+              >
+                <div class="comment-item" [id]="'comment-' + c._id">
+                  <img
+                    [src]="c.user?.profilePicture || 'assets/default-avatar.png'"
+                    class="comment-avatar"
+                    [class.reply-avatar]="depth > 0"
+                    [alt]="c.user?.username"
+                    onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=c'"
+                  />
+                  <div class="comment-body" style="flex: 1; min-width: 0;">
+                    <div class="comment-header-row">
+                      <div class="comment-author-badge">
+                        <a [routerLink]="['/user', c.user?.username]" class="comment-author">{{ c.user?.displayName || c.user?.username }}</a>
+                        <app-league-badge [points]="c.user?.totalPoints || 0"></app-league-badge>
+                      </div>
+                      <span class="comment-time">{{ getRelativeTime(c.createdAt) }}</span>
+                    </div>
+
+                    <p class="comment-text" [innerHTML]="formatCommentText(c.content)"></p>
+
+                    <div class="comment-actions-bar">
+                      <!-- Comment Like -->
+                      <button
+                        class="comment-action-btn"
+                        [class.liked]="isCommentLiked(c)"
+                        (click)="toggleCommentLike(c)"
+                        title="Like comment"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <span>{{ c.likes?.length || 0 }}</span>
+                      </button>
+
+                      <!-- Reply Button -->
+                      <button
+                        class="comment-action-btn reply-btn"
+                        (click)="openReplyBox(post._id, c)"
+                        title="Reply to comment"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
+                          <polyline points="7 6 3 10 7 14"></polyline>
+                        </svg>
+                        <span>Reply</span>
+                      </button>
+
+                      <!-- Delete Button -->
+                      <button 
+                        *ngIf="canDeleteComment(post, c)" 
+                        class="btn-icon delete-comment-btn" 
+                        (click)="deleteComment(post, c._id)"
+                        title="Delete Comment"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <!-- Inline Reply Composer -->
+                    <div class="reply-composer animate-fade-in" *ngIf="activeReplyMap[post._id] === c._id" style="position: relative;">
+                      <div class="replying-to-bar">
+                        <span>Replying to <strong>&#64;{{ c.user?.username }}</strong></span>
+                        <button class="btn-icon close-reply-btn" (click)="cancelReply(post._id)" title="Cancel">×</button>
+                      </div>
+                      <div class="reply-input-row" style="position: relative;">
+                        <input
+                          type="text"
+                          class="input input-sm"
+                          [(ngModel)]="replyDraftMap[post._id]"
+                          (input)="onReplyInput($event, post._id, c)"
+                          (keydown)="onReplyKeyDown($event, post, c)"
+                          [placeholder]="'Reply to @' + c.user?.username + '...'"
+                          #replyInputEl
+                        />
+                        <button class="btn btn-primary btn-sm" (click)="submitReply(post, c)" [disabled]="!replyDraftMap[post._id]?.trim()">
+                          Reply
+                        </button>
+                      </div>
+                      <app-mention-dropdown
+                        [users]="mentionUsers"
+                        [isOpen]="activeMentionContext === 'reply_' + c._id && isMentionOpen"
+                        [selectedIndex]="mentionSelectedIndex"
+                        [isLoading]="isMentionLoading"
+                        position="top"
+                        (userSelected)="onSelectMentionUser($event, 'reply_' + post._id)"
+                        (close)="closeMentionDropdown()"
+                      ></app-mention-dropdown>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Nested Child Replies Thread -->
+                <div class="replies-container" *ngIf="c.replies && c.replies.length > 0">
+                  <div class="reply-thread-item" *ngFor="let child of c.replies">
+                    <ng-container *ngTemplateOutlet="commentThreadNode; context: { c: child, depth: depth + 1, post: post }"></ng-container>
+                  </div>
+                </div>
+              </div>
+            </ng-template>
           </article>
         </div>
       </main>
@@ -1516,6 +1534,7 @@ export class CommunityComponent implements OnInit, OnDestroy {
   private followService = inject(FollowService);
   private uploadService = inject(UploadService);
   private toastService = inject(ToastService);
+  private userService = inject(UserService);
 
   posts: Post[] = [];
   suggestions: FollowUser[] = [];
@@ -1525,6 +1544,22 @@ export class CommunityComponent implements OnInit, OnDestroy {
   replyDraftMap: Record<string, string> = {};
   followingSet = new Set<string>();
   followLoadingSet = new Set<string>();
+
+  // Mention autocomplete state
+  mentionUsers: MentionUser[] = [];
+  isMentionOpen = false;
+  mentionSelectedIndex = 0;
+  isMentionLoading = false;
+  activeMentionContext: string | null = null;
+  activeMentionTarget: HTMLInputElement | HTMLTextAreaElement | null = null;
+  activeMentionTrigger: { query: string; startIndex: number } | null = null;
+
+  postMentions: MentionRef[] = [];
+  commentMentionsMap: Record<string, MentionRef[]> = {};
+  replyMentionsMap: Record<string, MentionRef[]> = {};
+
+  private mentionSearchSubject = new Subject<{ query: string; context: string }>();
+  private mentionSearchSub?: Subscription;
 
   newPostContent = '';
   openCommentPostId: string | null = null;
@@ -1585,10 +1620,31 @@ export class CommunityComponent implements OnInit, OnDestroy {
     ).subscribe(query => {
       this.executeSearch(query);
     });
+
+    this.mentionSearchSub = this.mentionSearchSubject.pipe(
+      debounceTime(150),
+      distinctUntilChanged((p, c) => p.query === c.query && p.context === c.context)
+    ).subscribe(({ query }) => {
+      this.isMentionLoading = true;
+      this.userService.searchUsers(query, 8).subscribe({
+        next: (res) => {
+          this.mentionUsers = res.users || [];
+          this.mentionSelectedIndex = 0;
+          this.isMentionLoading = false;
+          this.isMentionOpen = this.mentionUsers.length > 0;
+        },
+        error: () => {
+          this.isMentionLoading = false;
+          this.mentionUsers = [];
+          this.isMentionOpen = false;
+        }
+      });
+    });
   }
 
   ngOnDestroy() {
     this.searchSubscription?.unsubscribe();
+    this.mentionSearchSub?.unsubscribe();
   }
 
   onSearchInput(query: string) {
@@ -1714,56 +1770,221 @@ export class CommunityComponent implements OnInit, OnDestroy {
     }
   }
 
+  onPostComposerInput(event: Event) {
+    const target = event.target as HTMLTextAreaElement;
+    this.handleMentionInput(this.newPostContent, target, 'post');
+  }
+
+  onPostComposerKeyDown(event: KeyboardEvent) {
+    if (this.handleMentionKeyDown(event, 'post')) {
+      return;
+    }
+  }
+
+  onCommentInput(event: Event, postId: string) {
+    const target = event.target as HTMLInputElement;
+    const text = this.commentDraft[postId] || '';
+    this.handleMentionInput(text, target, 'comment_' + postId);
+  }
+
+  onCommentKeyDown(event: KeyboardEvent, post: Post) {
+    if (this.handleMentionKeyDown(event, 'comment_' + post._id)) {
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.submitComment(post);
+    }
+  }
+
+  onReplyInput(event: Event, postId: string, comment: Comment) {
+    const target = event.target as HTMLInputElement;
+    const text = this.replyDraftMap[postId] || '';
+    this.handleMentionInput(text, target, 'reply_' + comment._id);
+  }
+
+  onReplyKeyDown(event: KeyboardEvent, post: Post, comment: Comment) {
+    if (this.handleMentionKeyDown(event, 'reply_' + comment._id)) {
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.submitReply(post, comment);
+    }
+  }
+
+  private handleMentionInput(text: string, target: HTMLInputElement | HTMLTextAreaElement, context: string) {
+    const cursorPos = target.selectionStart ?? text.length;
+    const trigger = getMentionTrigger(text, cursorPos);
+
+    if (trigger) {
+      this.activeMentionContext = context;
+      this.activeMentionTarget = target;
+      this.activeMentionTrigger = trigger;
+      this.mentionSearchSubject.next({ query: trigger.query, context });
+    } else {
+      if (this.activeMentionContext === context) {
+        this.closeMentionDropdown();
+      }
+    }
+  }
+
+  private handleMentionKeyDown(event: KeyboardEvent, context: string): boolean {
+    if (!this.isMentionOpen || this.activeMentionContext !== context) {
+      return false;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (this.mentionUsers.length > 0) {
+        this.mentionSelectedIndex = (this.mentionSelectedIndex + 1) % this.mentionUsers.length;
+      }
+      return true;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (this.mentionUsers.length > 0) {
+        this.mentionSelectedIndex = (this.mentionSelectedIndex - 1 + this.mentionUsers.length) % this.mentionUsers.length;
+      }
+      return true;
+    }
+
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      if (this.mentionUsers.length > 0 && this.mentionUsers[this.mentionSelectedIndex]) {
+        event.preventDefault();
+        this.selectMentionUser(this.mentionUsers[this.mentionSelectedIndex], context);
+        return true;
+      }
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeMentionDropdown();
+      return true;
+    }
+
+    return false;
+  }
+
+  onSelectMentionUser(user: MentionUser, context: string) {
+    this.selectMentionUser(user, context);
+  }
+
+  selectMentionUser(user: MentionUser, context: string) {
+    if (!this.activeMentionTarget || !this.activeMentionTrigger) {
+      this.closeMentionDropdown();
+      return;
+    }
+
+    const target = this.activeMentionTarget;
+    const cursorPos = target.selectionStart ?? target.value.length;
+    const startIndex = this.activeMentionTrigger.startIndex;
+
+    if (context === 'post') {
+      const { newText, newCursorPos } = applyMentionSelection(this.newPostContent, startIndex, cursorPos, user.username);
+      this.newPostContent = newText;
+      this.postMentions.push({ userId: user._id, username: user.username });
+      this.restoreCursor(target, newCursorPos);
+    } else if (context.startsWith('comment_')) {
+      const postId = context.replace('comment_', '');
+      const currentText = this.commentDraft[postId] || '';
+      const { newText, newCursorPos } = applyMentionSelection(currentText, startIndex, cursorPos, user.username);
+      this.commentDraft[postId] = newText;
+      if (!this.commentMentionsMap[postId]) this.commentMentionsMap[postId] = [];
+      this.commentMentionsMap[postId].push({ userId: user._id, username: user.username });
+      this.restoreCursor(target, newCursorPos);
+    } else if (context.startsWith('reply_')) {
+      const postId = Object.keys(this.activeReplyMap).find(pid => this.activeReplyMap[pid] === context.replace('reply_', ''));
+      if (postId) {
+        const currentText = this.replyDraftMap[postId] || '';
+        const { newText, newCursorPos } = applyMentionSelection(currentText, startIndex, cursorPos, user.username);
+        this.replyDraftMap[postId] = newText;
+        if (!this.replyMentionsMap[postId]) this.replyMentionsMap[postId] = [];
+        this.replyMentionsMap[postId].push({ userId: user._id, username: user.username });
+        this.restoreCursor(target, newCursorPos);
+      }
+    }
+
+    this.closeMentionDropdown();
+  }
+
+  private restoreCursor(target: HTMLInputElement | HTMLTextAreaElement, pos: number) {
+    setTimeout(() => {
+      target.focus();
+      target.setSelectionRange(pos, pos);
+    }, 0);
+  }
+
+  closeMentionDropdown() {
+    this.isMentionOpen = false;
+    this.activeMentionContext = null;
+    this.activeMentionTarget = null;
+    this.activeMentionTrigger = null;
+    this.mentionUsers = [];
+    this.mentionSelectedIndex = 0;
+  }
+
+  getCommentTree(postId: string): ThreadComment[] {
+    const list = this.commentMap[postId] || [];
+    return buildCommentTree(list);
+  }
+
+  formatCommentText(content: string): string {
+    return formatContentWithMentions(content);
+  }
+
   submitComment(post: Post) {
     const content = this.commentDraft[post._id]?.trim();
     if (!content) return;
-    this.postService.addComment(post._id, content).subscribe(res => {
-      if (!this.commentMap[post._id]) this.commentMap[post._id] = [];
-      const me = this.authService.currentUserValue;
-      const enrichedComment = {
-        ...res.comment,
-        user: {
-          _id: me?._id || '',
-          username: me?.username || '',
-          displayName: me?.displayName || '',
-          profilePicture: me?.profilePicture || '',
-          totalPoints: me?.totalPoints || 0
-        }
-      };
-      this.commentMap[post._id].push(enrichedComment);
-      post.commentsCount = (post.commentsCount || 0) + 1;
-      this.commentDraft[post._id] = '';
-    });
-  }
+    const mentions = this.commentMentionsMap[post._id] || [];
 
-  getRootComments(postId: string): Comment[] {
-    const list = this.commentMap[postId] || [];
-    return list.filter(c => !c.parentComment);
-  }
-
-  getRepliesFor(postId: string, commentId: string): Comment[] {
-    const list = this.commentMap[postId] || [];
-    return list.filter(c => {
-      const pid = typeof c.parentComment === 'object' ? c.parentComment?._id : c.parentComment;
-      return pid === commentId;
+    this.postService.addComment(post._id, content, undefined, mentions).subscribe({
+      next: (res) => {
+        if (!this.commentMap[post._id]) this.commentMap[post._id] = [];
+        const me = this.authService.currentUserValue;
+        const enrichedComment: Comment = {
+          ...res.comment,
+          user: {
+            _id: me?._id || '',
+            username: me?.username || '',
+            displayName: me?.displayName || '',
+            profilePicture: me?.profilePicture || '',
+            totalPoints: me?.totalPoints || 0
+          },
+          likes: []
+        };
+        this.commentMap[post._id].push(enrichedComment);
+        post.commentsCount = (post.commentsCount || 0) + 1;
+        this.commentDraft[post._id] = '';
+        delete this.commentMentionsMap[post._id];
+        this.closeMentionDropdown();
+      },
+      error: (err) => {
+        this.toastService.showError(err?.error?.message || 'Failed to add comment');
+      }
     });
   }
 
   openReplyBox(postId: string, comment: Comment) {
     this.activeReplyMap[postId] = comment._id;
-    this.replyDraftMap[postId] = '';
+    this.replyDraftMap[postId] = `@${comment.user.username} `;
+    this.replyMentionsMap[postId] = [{ userId: comment.user._id, username: comment.user.username }];
   }
 
   cancelReply(postId: string) {
     this.activeReplyMap[postId] = null;
     this.replyDraftMap[postId] = '';
+    delete this.replyMentionsMap[postId];
+    this.closeMentionDropdown();
   }
 
   submitReply(post: Post, parentComment: Comment) {
     const content = (this.replyDraftMap[post._id] || '').trim();
     if (!content) return;
+    const mentions = this.replyMentionsMap[post._id] || [];
 
-    this.postService.addComment(post._id, content, parentComment._id).subscribe({
+    this.postService.addComment(post._id, content, parentComment._id, mentions).subscribe({
       next: (res) => {
         if (!this.commentMap[post._id]) this.commentMap[post._id] = [];
         const me = this.authService.currentUserValue;
@@ -1783,6 +2004,8 @@ export class CommunityComponent implements OnInit, OnDestroy {
         post.commentsCount = (post.commentsCount || 0) + 1;
         this.activeReplyMap[post._id] = null;
         this.replyDraftMap[post._id] = '';
+        delete this.replyMentionsMap[post._id];
+        this.closeMentionDropdown();
         this.toastService.showSuccess('Reply sent!');
       },
       error: (err) => {
@@ -1845,13 +2068,21 @@ export class CommunityComponent implements OnInit, OnDestroy {
       this.postService.deleteComment(commentId).subscribe({
         next: () => {
           if (this.commentMap[post._id]) {
-            this.commentMap[post._id] = this.commentMap[post._id].filter(c => {
-              if (c._id === commentId) return false;
-              const pid = typeof c.parentComment === 'object' ? c.parentComment?._id : c.parentComment;
-              return pid !== commentId;
-            });
+            const toRemove = new Set<string>([commentId]);
+            let changed = true;
+            while (changed) {
+              changed = false;
+              for (const item of this.commentMap[post._id]) {
+                const pid = typeof item.parentComment === 'object' ? item.parentComment?._id : item.parentComment;
+                if (pid && toRemove.has(pid) && !toRemove.has(item._id)) {
+                  toRemove.add(item._id);
+                  changed = true;
+                }
+              }
+            }
+            this.commentMap[post._id] = this.commentMap[post._id].filter(c => !toRemove.has(c._id));
+            post.commentsCount = Math.max(0, (post.commentsCount || 0) - toRemove.size);
           }
-          post.commentsCount = Math.max(0, (post.commentsCount || 0) - 1);
           this.toastService.showSuccess('Comment deleted');
         },
         error: (err) => {
@@ -1887,7 +2118,8 @@ export class CommunityComponent implements OnInit, OnDestroy {
   submitPost() {
     if ((!this.newPostContent.trim() && this.uploadedImages.length === 0) || this.isPosting) return;
     this.isPosting = true;
-    this.postService.createPost(this.newPostContent.trim(), this.uploadedImages).subscribe({
+    const mentions = [...this.postMentions];
+    this.postService.createPost(this.newPostContent.trim(), this.uploadedImages, mentions).subscribe({
       next: (res) => {
         const me = this.authService.currentUserValue;
         const enrichedPost = {
@@ -1903,6 +2135,8 @@ export class CommunityComponent implements OnInit, OnDestroy {
         this.posts.unshift(enrichedPost);
         this.newPostContent = '';
         this.uploadedImages = [];
+        this.postMentions = [];
+        this.closeMentionDropdown();
         this.isPosting = false;
       },
       error: () => { this.isPosting = false; }

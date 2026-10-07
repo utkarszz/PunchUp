@@ -1,10 +1,11 @@
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
 const Notification = require("../models/Notification");
+const { resolveAndVerifyMentions, notifyMentions } = require("../utils/mentionHelper");
 
 const createComment = async (req, res) => {
   try {
-    const { content, parentCommentId } = req.body;
+    const { content, parentCommentId, mentions } = req.body;
 
     if (!content || !content.trim()) {
       return res.status(400).json({
@@ -39,42 +40,90 @@ const createComment = async (req, res) => {
       }
     }
 
+    const mentionedUsers = await resolveAndVerifyMentions(
+      content,
+      mentions,
+      req.user._id
+    );
+
     const comment = await Comment.create({
       post: post._id,
       user: req.user._id,
       content: content.trim(),
       parentComment: parentComment ? parentComment._id : null,
       likes: [],
+      mentions: mentionedUsers.map((u) => u._id),
     });
 
     post.commentsCount = (post.commentsCount || 0) + 1;
     await post.save();
 
-    // Populate user before responding
+    // Populate user and mentions before responding
     await comment.populate("user", "username displayName profilePicture totalPoints");
+    await comment.populate("mentions", "username displayName profilePicture");
+    if (parentComment) {
+      await comment.populate({
+        path: "parentComment",
+        select: "_id user",
+        populate: {
+          path: "user",
+          select: "username displayName",
+        },
+      });
+    }
 
     // Notifications
     if (parentComment) {
-      // Replying to a comment: notify parent comment author (if not self)
-      if (parentComment.user.toString() !== req.user._id.toString()) {
+      // Replying to a comment/reply: notify parent comment author (if not self)
+      const parentAuthorIdStr = parentComment.user.toString();
+      const currentUserIdStr = req.user._id.toString();
+
+      if (parentAuthorIdStr !== currentUserIdStr) {
         await Notification.create({
           recipient: parentComment.user,
           sender: req.user._id,
           type: "comment_reply",
           post: post._id,
           comment: comment._id,
-          message: `${req.user.displayName || req.user.username} replied to your comment on your post.`,
+          message: `${req.user.displayName || req.user.username} replied to your comment.`,
+        });
+      }
+
+      // Notify mentioned users (excluding parent author and self to avoid duplicate notifications)
+      if (mentionedUsers.length > 0) {
+        await notifyMentions({
+          sender: req.user,
+          mentionedUsers,
+          type: "mention_reply",
+          post: post._id,
+          comment: comment._id,
+          excludeUserIds: [parentAuthorIdStr, currentUserIdStr],
         });
       }
     } else {
       // Top-level comment: notify post author (if not commenting on own post)
-      if (post.user.toString() !== req.user._id.toString()) {
+      const postAuthorIdStr = post.user.toString();
+      const currentUserIdStr = req.user._id.toString();
+
+      if (postAuthorIdStr !== currentUserIdStr) {
         await Notification.create({
           recipient: post.user,
           sender: req.user._id,
           type: "comment",
           post: post._id,
           comment: comment._id,
+        });
+      }
+
+      // Notify mentioned users (excluding post author and self to avoid duplicate notifications)
+      if (mentionedUsers.length > 0) {
+        await notifyMentions({
+          sender: req.user,
+          mentionedUsers,
+          type: "mention_comment",
+          post: post._id,
+          comment: comment._id,
+          excludeUserIds: [postAuthorIdStr, currentUserIdStr],
         });
       }
     }
@@ -97,6 +146,7 @@ const getComments = async (req, res) => {
       post: req.params.postId,
     })
       .populate("user", "username displayName profilePicture totalPoints")
+      .populate("mentions", "username displayName profilePicture")
       .populate({
         path: "parentComment",
         select: "_id user",
@@ -203,19 +253,26 @@ const deleteComment = async (req, res) => {
       });
     }
 
-    // Count this comment and any child replies that will be deleted
-    const childRepliesCount = await Comment.countDocuments({
-      parentComment: comment._id,
-    });
-    const totalDeleted = 1 + childRepliesCount;
+    // Gather all descendants recursively/iteratively so multi-level nested replies are fully cleaned up
+    const allDescendantIds = [];
+    const queue = [comment._id];
 
-    // Delete any replies to this comment
-    if (childRepliesCount > 0) {
-      await Comment.deleteMany({ parentComment: comment._id });
+    while (queue.length > 0) {
+      const currentParentId = queue.shift();
+      const children = await Comment.find({ parentComment: currentParentId }).select("_id");
+      for (const child of children) {
+        allDescendantIds.push(child._id);
+        queue.push(child._id);
+      }
+    }
+
+    if (allDescendantIds.length > 0) {
+      await Comment.deleteMany({ _id: { $in: allDescendantIds } });
     }
 
     await comment.deleteOne();
 
+    const totalDeleted = 1 + allDescendantIds.length;
     if (post) {
       post.commentsCount = Math.max(0, (post.commentsCount || 0) - totalDeleted);
       await post.save();

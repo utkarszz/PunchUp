@@ -9,6 +9,7 @@ import { StreakService, StreakData } from '../../core/services/streak.service';
 import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.service';
 import { PostService, Post, Comment } from '../../core/services/post.service';
 import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
+import { formatContentWithMentions } from '../../core/services/mention-utils';
 
 @Component({
   selector: 'app-profile',
@@ -203,7 +204,7 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
                 </div>
               </div>
 
-              <p class="post-content">{{ post.content }}</p>
+              <p class="post-content" [innerHTML]="formatCommentText(post.content)"></p>
 
               <div class="post-images" *ngIf="post.images && post.images.length > 0">
                 <img *ngFor="let img of post.images" [src]="img" class="post-image" alt="Post image" />
@@ -255,7 +256,7 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
                           </svg>
                         </button>
                       </div>
-                      <p class="comment-text">{{ c.content }}</p>
+                      <p class="comment-text" [innerHTML]="formatCommentText(c.content)"></p>
                     </div>
                   </div>
                 </div>
@@ -307,7 +308,7 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
                 </div>
               </div>
 
-              <p class="post-content">{{ post.content }}</p>
+              <p class="post-content" [innerHTML]="formatCommentText(post.content)"></p>
 
               <div class="post-images" *ngIf="post.images && post.images.length > 0">
                 <img *ngFor="let img of post.images" [src]="img" class="post-image" alt="Post image" />
@@ -360,7 +361,7 @@ import { LeagueBadgeComponent } from '../../shared/components/league-badge/leagu
                           </svg>
                         </button>
                       </div>
-                      <p class="comment-text">{{ c.content }}</p>
+                      <p class="comment-text" [innerHTML]="formatCommentText(c.content)"></p>
                     </div>
                   </div>
                 </div>
@@ -1248,5 +1249,9 @@ export class ProfileComponent implements OnInit {
     if (hrs < 24) return `${hrs}h ago`;
     const days = Math.floor(hrs / 24);
     return days < 7 ? `${days}d ago` : new Date(dateStr).toLocaleDateString();
+  }
+
+  formatCommentText(content: string): string {
+    return formatContentWithMentions(content);
   }
 }

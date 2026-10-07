@@ -34,6 +34,13 @@ const postSchema = new mongoose.Schema(
       default: 0,
     },
 
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
     shareId: {
       type: String,
       unique: true,

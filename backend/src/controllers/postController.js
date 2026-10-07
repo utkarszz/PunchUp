@@ -4,16 +4,36 @@ const User = require("../models/User");
 const Follow = require("../models/Follow");
 const SavedPost = require("../models/SavedPost");
 const Notification = require("../models/Notification");
+const { resolveAndVerifyMentions, notifyMentions } = require("../utils/mentionHelper");
 
 const createPost = async (req, res) => {
   try {
-    const { content, images } = req.body;
+    const { content, images, mentions } = req.body;
+
+    const mentionedUsers = await resolveAndVerifyMentions(
+      content,
+      mentions,
+      req.user._id
+    );
 
     const post = await Post.create({
       user: req.user._id,
       content,
       images: images || [],
+      mentions: mentionedUsers.map((u) => u._id),
     });
+
+    if (mentionedUsers.length > 0) {
+      await notifyMentions({
+        sender: req.user,
+        mentionedUsers,
+        type: "mention_post",
+        post: post._id,
+      });
+    }
+
+    await post.populate("user", "username displayName profilePicture totalPoints");
+    await post.populate("mentions", "username displayName profilePicture");
 
     res.status(201).json({
       success: true,
@@ -37,6 +57,7 @@ const getPosts = async (req, res) => {
 
     const posts = await Post.find()
       .populate("user", "username displayName profilePicture totalPoints")
+      .populate("mentions", "username displayName profilePicture")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -74,6 +95,7 @@ const getFeed = async (req, res) => {
 
     const posts = await Post.find({ user: { $in: followingIds } })
       .populate("user", "username displayName profilePicture totalPoints")
+      .populate("mentions", "username displayName profilePicture")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -107,10 +129,15 @@ const getPostById = async (req, res) => {
       ? { $or: [{ _id: param }, { shareId: param }] }
       : { shareId: param };
 
-    const post = await Post.findOne(query).populate(
+    let queryObj = Post.findOne(query).populate(
       "user",
       "username displayName profilePicture totalPoints"
     );
+    if (queryObj && typeof queryObj.populate === 'function') {
+      queryObj = queryObj.populate("mentions", "username displayName profilePicture");
+    }
+
+    const post = await queryObj;
 
     if (!post) {
       return res.status(404).json({
@@ -163,6 +190,7 @@ const getUserPosts = async (req, res) => {
       user: user._id,
     })
       .populate("user", "username displayName profilePicture totalPoints")
+      .populate("mentions", "username displayName profilePicture")
       .sort({
         createdAt: -1,
       })
@@ -187,7 +215,7 @@ const getUserPosts = async (req, res) => {
 
 const updatePost = async (req, res) => {
   try {
-    const { content, images } = req.body;
+    const { content, images, mentions } = req.body;
 
     const post = await Post.findById(req.params.id);
 
@@ -205,10 +233,42 @@ const updatePost = async (req, res) => {
       });
     }
 
-    if (content) post.content = content;
-    if (images) post.images = images;
+    if (content !== undefined) {
+      post.content = content;
+
+      // Re-resolve mentions on edit
+      const newMentionedUsers = await resolveAndVerifyMentions(
+        content,
+        mentions,
+        req.user._id
+      );
+
+      const oldMentionIdStrings = new Set(
+        (post.mentions || []).map((m) => m.toString())
+      );
+
+      // Only notify users who are newly mentioned in this edit
+      const newlyMentionedUsers = newMentionedUsers.filter(
+        (u) => !oldMentionIdStrings.has(u._id.toString())
+      );
+
+      post.mentions = newMentionedUsers.map((u) => u._id);
+
+      if (newlyMentionedUsers.length > 0) {
+        await notifyMentions({
+          sender: req.user,
+          mentionedUsers: newlyMentionedUsers,
+          type: "mention_post",
+          post: post._id,
+        });
+      }
+    }
+
+    if (images !== undefined) post.images = images;
 
     await post.save();
+    await post.populate("user", "username displayName profilePicture totalPoints");
+    await post.populate("mentions", "username displayName profilePicture");
 
     res.status(200).json({
       success: true,

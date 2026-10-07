@@ -54,6 +54,7 @@ import { NotificationService, Notification } from '../../core/services/notificat
               <svg *ngIf="notif.type === 'comment_reply'" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
               <svg *ngIf="notif.type === 'comment_like'" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               <svg *ngIf="notif.type === 'task_reminder'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <svg *ngIf="notif.type === 'mention_post' || notif.type === 'mention_comment' || notif.type === 'mention_reply' || notif.type === 'mention'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>
             </span>
           </div>
 
@@ -65,8 +66,12 @@ import { NotificationService, Notification } from '../../core/services/notificat
               <span *ngIf="notif.type === 'follow'"> started following you.</span>
               <span *ngIf="notif.type === 'like'"> liked your post.</span>
               <span *ngIf="notif.type === 'comment'"> commented on your post.</span>
-              <span *ngIf="notif.type === 'comment_reply'"> replied to your comment on a post.</span>
+              <span *ngIf="notif.type === 'comment_reply'"> replied to your comment.</span>
               <span *ngIf="notif.type === 'comment_like'"> liked your comment.</span>
+              <span *ngIf="notif.type === 'mention_post'"> mentioned you in a post.</span>
+              <span *ngIf="notif.type === 'mention_comment'"> mentioned you in a comment.</span>
+              <span *ngIf="notif.type === 'mention_reply'"> mentioned you in a reply.</span>
+              <span *ngIf="notif.type === 'mention'"> mentioned you.</span>
             </p>
             <p class="notif-text" *ngIf="notif.type === 'task_reminder'">
               <span class="notif-reminder-title">Task Reminder: </span>
@@ -195,6 +200,10 @@ import { NotificationService, Notification } from '../../core/services/notificat
     .notif-type-icon.type-comment_reply { background: #06b6d4; color: #fff; }
     .notif-type-icon.type-comment_like  { background: #f43f5e; color: #fff; }
     .notif-type-icon.type-task_reminder { background: var(--accent); color: #fff; }
+    .notif-type-icon.type-mention_post,
+    .notif-type-icon.type-mention_comment,
+    .notif-type-icon.type-mention_reply,
+    .notif-type-icon.type-mention { background: #10b981; color: #fff; }
 
     .notif-reminder-title {
       font-weight: 600;

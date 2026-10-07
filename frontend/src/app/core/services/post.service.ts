@@ -15,6 +15,12 @@ export interface Post {
     profilePicture?: string;
     totalPoints?: number;
   };
+  mentions?: Array<{
+    _id: string;
+    username: string;
+    displayName?: string;
+    profilePicture?: string;
+  }>;
   likes: string[];
   saves: string[];
   commentsCount?: number;
@@ -32,6 +38,12 @@ export interface Comment {
     totalPoints?: number;
   };
   parentComment?: string | { _id: string; user?: { username?: string; displayName?: string } };
+  mentions?: Array<{
+    _id: string;
+    username: string;
+    displayName?: string;
+    profilePicture?: string;
+  }>;
   likes?: string[];
   replies?: Comment[];
   createdAt: string;
@@ -50,8 +62,8 @@ export class PostService {
     return this.http.get<{ success: boolean; post: Post }>(`${this.base}/posts/${postIdOrShareId}`);
   }
 
-  createPost(content: string, images?: string[]): Observable<{ success: boolean; post: Post }> {
-    return this.http.post<{ success: boolean; post: Post }>(`${this.base}/posts`, { content, images });
+  createPost(content: string, images?: string[], mentions?: any[]): Observable<{ success: boolean; post: Post }> {
+    return this.http.post<{ success: boolean; post: Post }>(`${this.base}/posts`, { content, images, mentions });
   }
 
   likePost(postId: string): Observable<{ liked: boolean }> {
@@ -66,10 +78,13 @@ export class PostService {
     return this.http.get<{ success: boolean; comments: Comment[] }>(`${this.base}/comments/${postId}`);
   }
 
-  addComment(postId: string, content: string, parentCommentId?: string): Observable<{ success: boolean; comment: Comment }> {
-    const payload: { content: string; parentCommentId?: string } = { content };
+  addComment(postId: string, content: string, parentCommentId?: string, mentions?: any[]): Observable<{ success: boolean; comment: Comment }> {
+    const payload: { content: string; parentCommentId?: string; mentions?: any[] } = { content };
     if (parentCommentId) {
       payload.parentCommentId = parentCommentId;
+    }
+    if (mentions && mentions.length > 0) {
+      payload.mentions = mentions;
     }
     return this.http.post<{ success: boolean; comment: Comment }>(`${this.base}/comments/${postId}`, payload);
   }

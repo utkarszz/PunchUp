@@ -9,6 +9,7 @@ import { PostService, Post, Comment } from '../../core/services/post.service';
 import { AdminService } from '../../core/services/admin.service';
 import { Task } from '../../core/services/task.service';
 import { LeagueBadgeComponent } from '../../shared/components/league-badge/league-badge.component';
+import { formatContentWithMentions } from '../../core/services/mention-utils';
 
 interface GridDisplayCell {
   date: string;
@@ -211,7 +212,7 @@ interface GridDisplayCell {
                   </div>
                 </div>
 
-                <p class="post-content">{{ post.content }}</p>
+                <p class="post-content" [innerHTML]="formatCommentText(post.content)"></p>
 
                 <div class="post-images" *ngIf="post.images && post.images.length > 0">
                   <img *ngFor="let img of post.images" [src]="img" class="post-image" alt="Post image" />
@@ -264,7 +265,7 @@ interface GridDisplayCell {
                             </svg>
                           </button>
                         </div>
-                        <p class="comment-text">{{ c.content }}</p>
+                        <p class="comment-text" [innerHTML]="formatCommentText(c.content)"></p>
                       </div>
                     </div>
                   </div>
@@ -316,7 +317,7 @@ interface GridDisplayCell {
                   </div>
                 </div>
 
-                <p class="post-content">{{ post.content }}</p>
+                <p class="post-content" [innerHTML]="formatCommentText(post.content)"></p>
 
                 <div class="post-images" *ngIf="post.images && post.images.length > 0">
                   <img *ngFor="let img of post.images" [src]="img" class="post-image" alt="Post image" />
@@ -369,7 +370,7 @@ interface GridDisplayCell {
                             </svg>
                           </button>
                         </div>
-                        <p class="comment-text">{{ c.content }}</p>
+                        <p class="comment-text" [innerHTML]="formatCommentText(c.content)"></p>
                       </div>
                     </div>
                   </div>
@@ -1565,5 +1566,9 @@ export class PublicProfileComponent implements OnInit {
 
   public getPendingTasksCount(): number {
     return this.adminTasks.filter(t => !t.completed).length;
+  }
+
+  public formatCommentText(content: string): string {
+    return formatContentWithMentions(content);
   }
 }

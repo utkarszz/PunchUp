@@ -42,4 +42,9 @@ export class UserService {
   public getUserProfile(id: string): Observable<{ success: boolean; profile: PublicProfile }> {
     return this.http.get<{ success: boolean; profile: PublicProfile }>(`${this.baseUrl}/${id}`);
   }
+
+  public searchUsers(query: string, limit = 8): Observable<{ success: boolean; count: number; users: any[] }> {
+    const q = encodeURIComponent(query || '');
+    return this.http.get<{ success: boolean; count: number; users: any[] }>(`${this.baseUrl}/search?q=${q}&limit=${limit}`);
+  }
 }

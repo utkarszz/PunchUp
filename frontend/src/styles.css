@@ -616,3 +616,27 @@ html.light-mode .mobile-theme-toggle:hover {
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(24, 24, 27, 0.08) !important;
   color: #000000 !important;
 }
+
+/* Mention Pill / Tag */
+.mention-tag {
+  color: #38bdf8 !important;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+  display: inline-block;
+  cursor: pointer;
+}
+.mention-tag:hover {
+  text-decoration: underline;
+  background: rgba(56, 189, 248, 0.2);
+}
+html.light-mode .mention-tag {
+  color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.1);
+}
+html.light-mode .mention-tag:hover {
+  background: rgba(2, 132, 199, 0.18);
+}

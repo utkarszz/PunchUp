@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 
 export interface Notification {
   _id: string;
-  type: 'follow' | 'like' | 'comment' | 'task_reminder' | 'comment_reply' | 'comment_like';
+  type: 'follow' | 'like' | 'comment' | 'task_reminder' | 'comment_reply' | 'comment_like' | 'mention_post' | 'mention_comment' | 'mention_reply' | 'mention';
   from?: {
     _id: string;
     username: string;
