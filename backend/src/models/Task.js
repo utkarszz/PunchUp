@@ -79,6 +79,18 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    recurringTaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RecurringTask",
+      default: null,
+      index: true,
+    },
+
+    recurrenceDate: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -86,6 +98,16 @@ const taskSchema = new mongoose.Schema(
 );
 
 taskSchema.index({ reminderEnabled: 1, completed: 1, isDeleted: 1, nextReminderAt: 1 });
+taskSchema.index(
+  { recurringTaskId: 1, recurrenceDate: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      recurringTaskId: { $type: "objectId" },
+      recurrenceDate: { $type: "string" },
+    },
+  }
+);
 
 // Guarantee that missing or null dueDate is assigned 24 hours from creation before validation runs
 taskSchema.pre("validate", function (next) {

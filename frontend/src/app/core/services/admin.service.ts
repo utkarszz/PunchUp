@@ -20,6 +20,37 @@ export interface AdminUser {
   updatedAt: string;
 }
 
+export interface AdminStudyTimeUser {
+  userId: string;
+  username: string;
+  displayName: string;
+  email: string;
+  profilePicture?: string;
+  role: 'user' | 'admin';
+  todayDuration: number;
+  todayFormatted: string;
+  weeklyDuration: number;
+  weeklyFormatted: string;
+  overallDuration: number;
+  overallFormatted: string;
+}
+
+export interface StudyTimePagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasPrevPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface AdminStudyTimeResponse {
+  success: boolean;
+  users: AdminStudyTimeUser[];
+  pagination: StudyTimePagination;
+  timeZone: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -29,6 +60,26 @@ export class AdminService {
 
   getUsers(): Observable<{ success: boolean; count: number; users: AdminUser[] }> {
     return this.http.get<{ success: boolean; count: number; users: AdminUser[] }>(`${this.baseUrl}/users`);
+  }
+
+  getStudyTime(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    timeZone?: string;
+  } = {}): Observable<AdminStudyTimeResponse> {
+    const queryParts: string[] = [];
+    if (params.page) queryParts.push(`page=${params.page}`);
+    if (params.limit) queryParts.push(`limit=${params.limit}`);
+    if (params.search) queryParts.push(`search=${encodeURIComponent(params.search)}`);
+    if (params.sortBy) queryParts.push(`sortBy=${params.sortBy}`);
+    if (params.sortOrder) queryParts.push(`sortOrder=${params.sortOrder}`);
+    if (params.timeZone) queryParts.push(`timeZone=${encodeURIComponent(params.timeZone)}`);
+
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+    return this.http.get<AdminStudyTimeResponse>(`${this.baseUrl}/study-time${queryString}`);
   }
 
   deleteUser(userId: string): Observable<{ success: boolean; message: string }> {

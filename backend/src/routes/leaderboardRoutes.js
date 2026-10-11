@@ -8,9 +8,9 @@ const {
   getFocusLeaderboard,
 } = require('../controllers/leaderboardController');
 
-router.get('/overall', protect, getOverallLeaderboard);
-router.get('/weekly', protect, getWeeklyLeaderboard);
-router.get('/league/:league', protect, getLeagueLeaderboard);
-router.get('/focus', protect, getFocusLeaderboard);
+router.get('/overall', protect.optional, getOverallLeaderboard);
+router.get('/weekly', protect.optional, getWeeklyLeaderboard);
+router.get('/league/:league', protect.optional, getLeagueLeaderboard);
+router.get('/focus', protect.optional, getFocusLeaderboard);
 
 module.exports = router;

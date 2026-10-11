@@ -59,8 +59,15 @@ export interface MentionUser {
   styles: [`
     :host {
       display: block;
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1200;
     }
 
     .mention-dropdown-panel {
@@ -77,15 +84,18 @@ export interface MentionUser {
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      pointer-events: auto;
       animation: mentionAppear 0.15s ease-out forwards;
     }
 
     .mention-dropdown-panel.pos-bottom {
       top: calc(100% + 6px);
+      bottom: auto;
     }
 
     .mention-dropdown-panel.pos-top {
       bottom: calc(100% + 6px);
+      top: auto;
     }
 
     @keyframes mentionAppear {
@@ -218,6 +228,9 @@ export interface MentionUser {
       .mention-avatar {
         width: 28px;
         height: 28px;
+      }
+      .mention-list {
+        max-height: 170px;
       }
     }
   `]

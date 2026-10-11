@@ -33,21 +33,21 @@ export class LeaderboardService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/api/leaderboard`;
 
-  public getOverallLeaderboard(): Observable<{ success: boolean; leaderboard: LeaderboardEntry[] }> {
-    return this.http.get<{ success: boolean; leaderboard: LeaderboardEntry[] }>(`${this.baseUrl}/overall`);
+  public getOverallLeaderboard(): Observable<{ success: boolean; leaderboard: LeaderboardEntry[]; currentUserRank?: LeaderboardEntry | null }> {
+    return this.http.get<{ success: boolean; leaderboard: LeaderboardEntry[]; currentUserRank?: LeaderboardEntry | null }>(`${this.baseUrl}/overall`);
   }
 
-  public getWeeklyLeaderboard(): Observable<{ success: boolean; weekStart: string; leaderboard: LeaderboardEntry[] }> {
-    return this.http.get<{ success: boolean; weekStart: string; leaderboard: LeaderboardEntry[] }>(`${this.baseUrl}/weekly`);
+  public getWeeklyLeaderboard(): Observable<{ success: boolean; weekStart: string; leaderboard: LeaderboardEntry[]; currentUserRank?: LeaderboardEntry | null }> {
+    return this.http.get<{ success: boolean; weekStart: string; leaderboard: LeaderboardEntry[]; currentUserRank?: LeaderboardEntry | null }>(`${this.baseUrl}/weekly`);
   }
 
-  public getLeagueLeaderboard(league: string): Observable<{ success: boolean; league: string; leaderboard: LeaderboardEntry[] }> {
-    return this.http.get<{ success: boolean; league: string; leaderboard: LeaderboardEntry[] }>(`${this.baseUrl}/league/${league}`);
+  public getLeagueLeaderboard(league: string): Observable<{ success: boolean; league: string; leaderboard: LeaderboardEntry[]; currentUserRank?: LeaderboardEntry | null }> {
+    return this.http.get<{ success: boolean; league: string; leaderboard: LeaderboardEntry[]; currentUserRank?: LeaderboardEntry | null }>(`${this.baseUrl}/league/${league}`);
   }
 
-  public getFocusLeaderboard(period: string = 'daily', timeZone?: string): Observable<{ success: boolean; period: string; leaderboard: FocusLeaderboardEntry[] }> {
+  public getFocusLeaderboard(period: string = 'daily', timeZone?: string): Observable<{ success: boolean; period: string; leaderboard: FocusLeaderboardEntry[]; currentUserRank?: FocusLeaderboardEntry | null }> {
     const tz = timeZone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC');
-    return this.http.get<{ success: boolean; period: string; leaderboard: FocusLeaderboardEntry[] }>(
+    return this.http.get<{ success: boolean; period: string; leaderboard: FocusLeaderboardEntry[]; currentUserRank?: FocusLeaderboardEntry | null }>(
       `${this.baseUrl}/focus?period=${period}&timeZone=${encodeURIComponent(tz || 'UTC')}`
     );
   }

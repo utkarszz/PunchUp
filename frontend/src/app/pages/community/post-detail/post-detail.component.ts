@@ -140,35 +140,37 @@ import {
         </div>
 
         <!-- Comments Section -->
-        <section class="card comments-card animate-slide-up">
+        <section class="card comments-card animate-slide-up" [class.has-active-mention]="isMentionOpen">
           <h3 class="comments-title">
             Comments
             <span class="count-badge" *ngIf="comments.length > 0">{{ comments.length }}</span>
           </h3>
 
           <!-- Authenticated Main Comment Composer -->
-          <div class="comment-input-row" *ngIf="isAuthenticated" style="position: relative;">
-            <input
-              type="text"
-              class="input"
-              [(ngModel)]="mainCommentDraft"
-              (input)="onMainCommentInput($event)"
-              (keydown)="onMainCommentKeyDown($event)"
-              placeholder="Write a comment... Type @ to mention"
-              #mainCommentInput
-            />
-            <button class="btn btn-primary btn-sm" (click)="submitComment()" [disabled]="!mainCommentDraft.trim()">
+          <div class="comment-input-row" *ngIf="isAuthenticated">
+            <div class="comment-input-wrapper">
+              <textarea
+                class="input comment-textarea"
+                [(ngModel)]="mainCommentDraft"
+                (input)="onMainCommentInput($event)"
+                (keydown)="onMainCommentKeyDown($event)"
+                placeholder="Write a comment... Type @ to mention"
+                rows="1"
+                #mainCommentInput
+              ></textarea>
+              <app-mention-dropdown
+                [users]="mentionUsers"
+                [isOpen]="activeMentionContext === 'main' && isMentionOpen"
+                [selectedIndex]="mentionSelectedIndex"
+                [isLoading]="isMentionLoading"
+                position="bottom"
+                (userSelected)="onSelectMentionUser($event, 'main')"
+                (close)="closeMentionDropdown()"
+              ></app-mention-dropdown>
+            </div>
+            <button class="btn btn-primary btn-sm comment-submit-btn" (click)="submitComment()" [disabled]="!mainCommentDraft.trim()">
               Send
             </button>
-            <app-mention-dropdown
-              [users]="mentionUsers"
-              [isOpen]="activeMentionContext === 'main' && isMentionOpen"
-              [selectedIndex]="mentionSelectedIndex"
-              [isLoading]="isMentionLoading"
-              position="top"
-              (userSelected)="onSelectMentionUser($event, 'main')"
-              (close)="closeMentionDropdown()"
-            ></app-mention-dropdown>
           </div>
 
           <!-- Empty Comments State -->
@@ -257,29 +259,31 @@ import {
                       <span>Replying to <strong>&#64;{{ c.user?.username }}</strong></span>
                       <button class="btn-icon close-reply-btn" (click)="cancelReply()" title="Cancel">×</button>
                     </div>
-                    <div class="reply-input-row" style="position: relative;">
-                      <input
-                        type="text"
-                        class="input input-sm"
-                        [(ngModel)]="replyDraft"
-                        (input)="onReplyInput($event, c)"
-                        (keydown)="onReplyKeyDown($event, c)"
-                        [placeholder]="'Reply to @' + c.user?.username + '...'"
-                        #replyInput
-                      />
+                    <div class="reply-input-row">
+                      <div class="reply-input-wrapper">
+                        <input
+                          type="text"
+                          class="input input-sm reply-input"
+                          [(ngModel)]="replyDraft"
+                          (input)="onReplyInput($event, c)"
+                          (keydown)="onReplyKeyDown($event, c)"
+                          [placeholder]="'Reply to @' + c.user?.username + '...'"
+                          #replyInput
+                        />
+                        <app-mention-dropdown
+                          [users]="mentionUsers"
+                          [isOpen]="activeMentionContext === 'reply_' + c._id && isMentionOpen"
+                          [selectedIndex]="mentionSelectedIndex"
+                          [isLoading]="isMentionLoading"
+                          position="top"
+                          (userSelected)="onSelectMentionUser($event, 'reply_' + c._id)"
+                          (close)="closeMentionDropdown()"
+                        ></app-mention-dropdown>
+                      </div>
                       <button class="btn btn-primary btn-sm" (click)="submitReply(c)" [disabled]="!replyDraft?.trim()">
                         Reply
                       </button>
                     </div>
-                    <app-mention-dropdown
-                      [users]="mentionUsers"
-                      [isOpen]="activeMentionContext === 'reply_' + c._id && isMentionOpen"
-                      [selectedIndex]="mentionSelectedIndex"
-                      [isLoading]="isMentionLoading"
-                      position="top"
-                      (userSelected)="onSelectMentionUser($event, 'reply_' + c._id)"
-                      (close)="closeMentionDropdown()"
-                    ></app-mention-dropdown>
                   </div>
                 </div>
               </div>
@@ -525,7 +529,51 @@ import {
     .comment-input-row {
       display: flex;
       gap: 0.5rem;
-      align-items: center;
+      align-items: flex-end;
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+
+    .comment-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+    }
+
+    .comment-textarea {
+      width: 100%;
+      min-height: 40px;
+      max-height: 120px;
+      resize: none;
+      overflow-y: auto;
+      padding: 0.5625rem 0.875rem;
+      font-size: 0.875rem;
+      font-family: var(--font-sans);
+      line-height: 1.45;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .comment-textarea:focus {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 0 1px rgba(199, 199, 204, 0.12), var(--glow-silver-sm);
+    }
+
+    .comment-submit-btn {
+      height: 40px;
+      flex-shrink: 0;
+      align-self: flex-end;
+      padding: 0 1.1rem;
+      font-weight: 500;
+    }
+
+    .has-active-mention {
+      z-index: 50 !important;
     }
 
     .empty-comments {
@@ -694,9 +742,21 @@ import {
       align-items: center;
     }
 
-    .input-sm {
-      padding: 0.35rem 0.6rem;
+    .reply-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+    }
+
+    .reply-input-wrapper .input-sm {
+      width: 100%;
+      padding: 0.4rem 0.65rem;
       font-size: 0.8125rem;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
     }
 
     /* Replies container */
@@ -873,7 +933,11 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
   // Mention interaction handlers
   onMainCommentInput(event: Event) {
-    const target = event.target as HTMLInputElement;
+    const target = event.target as HTMLTextAreaElement;
+    if (target) {
+      target.style.height = 'auto';
+      target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+    }
     this.handleMentionInput(this.mainCommentDraft, target, 'main');
   }
 
@@ -881,7 +945,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     if (this.handleMentionKeyDown(event, 'main')) {
       return;
     }
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.submitComment();
     }

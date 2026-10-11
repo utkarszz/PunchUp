@@ -1,6 +1,9 @@
 const Task = require('../models/Task');
+const RecurringTask = require('../models/RecurringTask');
 const streakService = require('../services/streakService');
 const pointService = require('../services/pointService');
+const { getLocalDateString, computeNextRunAt } = require('../utils/recurrenceHelpers');
+const { checkAndGenerateRecurringTasks } = require('../services/recurringTaskScheduler');
 
 const createTask = async (req, res) => {
   try {
@@ -24,6 +27,67 @@ const createTask = async (req, res) => {
         });
       }
       reminderInterval = parsedInterval;
+    }
+
+    // Check if recurring task creation is requested
+    const isRecurring = req.body.isRecurring === true || req.body.frequency === 'daily';
+
+    if (isRecurring) {
+      const creationTime = req.body.creationTime || '07:00';
+      const timeZone = (req.body.timeZone && typeof req.body.timeZone === 'string') ? req.body.timeZone.trim() : 'UTC';
+      const startDate = req.body.startDate ? new Date(req.body.startDate) : new Date();
+      const endDate = req.body.endDate ? new Date(req.body.endDate) : null;
+
+      const scheduleData = {
+        title,
+        description: description || '',
+        priority: priority || 'medium',
+        category: category || 'general',
+        user: req.user._id,
+        creationTime,
+        timeZone,
+        startDate,
+        endDate,
+        reminderInterval,
+        isActive: true,
+      };
+
+      const now = new Date();
+      const localDateStr = getLocalDateString(now, timeZone);
+
+      // Create persistent recurrence definition
+      const recurringSchedule = await RecurringTask.create(scheduleData);
+
+      // Generate today's initial instance linked to this schedule
+      const taskDue = parsedDueDate || new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const taskData = {
+        title,
+        description: description || '',
+        priority: priority || 'medium',
+        category: category || 'general',
+        user: req.user._id,
+        dueDate: taskDue,
+        reminderInterval,
+        reminderEnabled: reminderInterval > 0,
+        nextReminderAt: reminderInterval > 0 ? new Date(Date.now() + reminderInterval * 60 * 60 * 1000) : null,
+        recurringTaskId: recurringSchedule._id,
+        recurrenceDate: localDateStr,
+      };
+
+      const task = await Task.create(taskData);
+
+      // Advance schedule to next day at creationTime
+      const nextRun = computeNextRunAt(creationTime, timeZone, new Date(now.getTime() + 60 * 1000), localDateStr);
+      recurringSchedule.lastGeneratedDate = localDateStr;
+      recurringSchedule.lastGeneratedAt = now;
+      recurringSchedule.nextRunAt = nextRun;
+      await recurringSchedule.save();
+
+      return res.status(201).json({
+        success: true,
+        task,
+        recurringSchedule,
+      });
     }
 
     const taskData = {
@@ -156,6 +220,15 @@ const deleteTask = async (req, res) => {
     }
 
     const permanent = req.query.permanent === 'true';
+    const stopRecurrence = req.query.stopRecurrence === 'true';
+
+    // If task was generated from a recurring schedule and user chose to stop recurrence
+    if (task.recurringTaskId && stopRecurrence) {
+      await RecurringTask.findOneAndUpdate(
+        { _id: task.recurringTaskId, user: req.user._id },
+        { $set: { isActive: false, nextRunAt: null } }
+      );
+    }
 
     if (permanent) {
       await task.deleteOne();
@@ -251,6 +324,108 @@ const completeTask = async (req, res) => {
   }
 };
 
+// ── Recurring Tasks Management ────────────────────────────────────────────────
+const getRecurringTasks = async (req, res) => {
+  try {
+    const schedules = await RecurringTask.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: schedules.length, schedules });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const createRecurringSchedule = async (req, res) => {
+  try {
+    const { title, description, priority, category, creationTime, timeZone, startDate, endDate, reminderInterval } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Title is required' });
+    }
+
+    const validInterval = Number(reminderInterval) || 0;
+    const tz = (timeZone && typeof timeZone === 'string') ? timeZone.trim() : 'UTC';
+    const cTime = creationTime || '07:00';
+    const sDate = startDate ? new Date(startDate) : new Date();
+    const eDate = endDate ? new Date(endDate) : null;
+
+    const schedule = new RecurringTask({
+      user: req.user._id,
+      title: title.trim(),
+      description: description || '',
+      priority: priority || 'medium',
+      category: category || 'general',
+      creationTime: cTime,
+      timeZone: tz,
+      startDate: sDate,
+      endDate: eDate,
+      reminderInterval: validInterval,
+      isActive: true,
+    });
+
+    schedule.nextRunAt = computeNextRunAt(cTime, tz, new Date(), null);
+    await schedule.save();
+
+    res.status(201).json({ success: true, schedule });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateRecurringSchedule = async (req, res) => {
+  try {
+    const schedule = await RecurringTask.findOne({ _id: req.params.id, user: req.user._id });
+    if (!schedule) {
+      return res.status(404).json({ success: false, message: 'Recurring schedule not found' });
+    }
+
+    const { title, description, priority, category, creationTime, timeZone, startDate, endDate, reminderInterval, isActive } = req.body;
+
+    if (title !== undefined) schedule.title = title.trim();
+    if (description !== undefined) schedule.description = description;
+    if (priority !== undefined) schedule.priority = priority;
+    if (category !== undefined) schedule.category = category;
+    if (creationTime !== undefined) schedule.creationTime = creationTime;
+    if (timeZone !== undefined) schedule.timeZone = timeZone.trim();
+    if (startDate !== undefined) schedule.startDate = startDate ? new Date(startDate) : new Date();
+    if (endDate !== undefined) schedule.endDate = endDate ? new Date(endDate) : null;
+    if (reminderInterval !== undefined) schedule.reminderInterval = Number(reminderInterval) || 0;
+    if (isActive !== undefined) schedule.isActive = Boolean(isActive);
+
+    if (schedule.isActive) {
+      schedule.nextRunAt = computeNextRunAt(schedule.creationTime, schedule.timeZone, new Date(), schedule.lastGeneratedDate);
+    } else {
+      schedule.nextRunAt = null;
+    }
+
+    await schedule.save();
+    res.status(200).json({ success: true, schedule });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const deleteRecurringSchedule = async (req, res) => {
+  try {
+    const schedule = await RecurringTask.findOne({ _id: req.params.id, user: req.user._id });
+    if (!schedule) {
+      return res.status(404).json({ success: false, message: 'Recurring schedule not found' });
+    }
+
+    await schedule.deleteOne();
+    res.status(200).json({ success: true, message: 'Recurring schedule deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const triggerRecurringCheck = async (req, res) => {
+  try {
+    const count = await checkAndGenerateRecurringTasks();
+    res.status(200).json({ success: true, message: `Processed recurring tasks. Generated: ${count}`, generatedCount: count });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createTask,
   getTasks,
@@ -258,4 +433,9 @@ module.exports = {
   deleteTask,
   completeTask,
   getArchivedTasks,
+  getRecurringTasks,
+  createRecurringSchedule,
+  updateRecurringSchedule,
+  deleteRecurringSchedule,
+  triggerRecurringCheck,
 };

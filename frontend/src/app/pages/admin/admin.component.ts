@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AdminService, AdminUser } from '../../core/services/admin.service';
+import { AdminService, AdminUser, AdminStudyTimeUser, StudyTimePagination } from '../../core/services/admin.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -104,6 +104,138 @@ import { ToastService } from '../../core/services/toast.service';
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- Study & Focus Time Section -->
+      <section class="card admin-table-card animate-slide-up">
+        <div class="table-header">
+          <div>
+            <h2>Study & Focus Time</h2>
+            <p class="section-subtext">Recorded focus sessions aggregated from verified timer records.</p>
+          </div>
+          <div class="study-time-controls">
+            <div class="search-bar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" [(ngModel)]="studySearchQuery" (input)="onStudySearchInput()" placeholder="Filter study time by user..." />
+            </div>
+
+            <div class="sort-selector">
+              <label>Sort:</label>
+              <select [(ngModel)]="studySortBy" (change)="loadStudyTime()">
+                <option value="todayDuration">Today's Focus</option>
+                <option value="weeklyDuration">Weekly Focus</option>
+                <option value="overallDuration">Overall Focus</option>
+                <option value="username">Username</option>
+              </select>
+              <button class="btn btn-icon sort-dir-btn" (click)="toggleStudySortOrder()" [title]="studySortOrder === 'desc' ? 'Descending' : 'Ascending'">
+                <svg *ngIf="studySortOrder === 'desc'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+                <svg *ngIf="studySortOrder === 'asc'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="19" x2="12" y2="5"></line>
+                  <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="isStudyLoading">
+          <div class="spinner"></div>
+          <span>Loading study records...</span>
+        </div>
+
+        <!-- Error State -->
+        <div class="error-state" *ngIf="studyError && !isStudyLoading">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ studyError }}</span>
+          <button class="btn btn-secondary btn-sm" (click)="loadStudyTime()">Retry</button>
+        </div>
+
+        <!-- Study Records Table -->
+        <div class="table-responsive" *ngIf="!isStudyLoading && !studyError">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th class="clickable-header" (click)="changeStudySort('todayDuration')">
+                  Today
+                  <span class="sort-indicator" *ngIf="studySortBy === 'todayDuration'">{{ studySortOrder === 'desc' ? '↓' : '↑' }}</span>
+                </th>
+                <th class="clickable-header" (click)="changeStudySort('weeklyDuration')">
+                  This Week
+                  <span class="sort-indicator" *ngIf="studySortBy === 'weeklyDuration'">{{ studySortOrder === 'desc' ? '↓' : '↑' }}</span>
+                </th>
+                <th class="clickable-header" (click)="changeStudySort('overallDuration')">
+                  Overall
+                  <span class="sort-indicator" *ngIf="studySortBy === 'overallDuration'">{{ studySortOrder === 'desc' ? '↓' : '↑' }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of studyUsers">
+                <td>
+                  <a [routerLink]="['/user', s.username]" class="user-cell-link">
+                    <div class="user-cell">
+                      <img [src]="s.profilePicture || 'assets/default-avatar.png'"
+                           onerror="this.src='assets/default-avatar.png'"
+                           alt="Avatar" class="avatar" />
+                      <div class="user-info">
+                        <span class="display-name">{{ s.displayName || s.username }}</span>
+                        <span class="username">&#64;{{ s.username }}</span>
+                      </div>
+                    </div>
+                  </a>
+                </td>
+                <td class="email-cell">{{ s.email }}</td>
+                <td>
+                  <span class="focus-pill" [class.highlight]="s.todayDuration > 0">
+                    {{ s.todayFormatted }}
+                  </span>
+                </td>
+                <td>
+                  <span class="focus-pill" [class.highlight]="s.weeklyDuration > 0">
+                    {{ s.weeklyFormatted }}
+                  </span>
+                </td>
+                <td>
+                  <span class="focus-pill overall" [class.highlight]="s.overallDuration > 0">
+                    {{ s.overallFormatted }}
+                  </span>
+                </td>
+              </tr>
+              <!-- Empty State -->
+              <tr *ngIf="studyUsers.length === 0">
+                <td colspan="5" class="empty-row">No recorded focus sessions found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="pagination-bar" *ngIf="!isStudyLoading && !studyError && studyPagination.total > 0">
+          <span class="pagination-info">
+            Showing {{ (studyPagination.page - 1) * studyPagination.limit + 1 }}–{{ getStudyShowingEnd() }} of {{ studyPagination.total }} users
+          </span>
+          <div class="pagination-controls">
+            <button class="btn btn-secondary btn-sm" [disabled]="!studyPagination.hasPrevPage" (click)="setStudyPage(studyPagination.page - 1)">
+              Previous
+            </button>
+            <span class="page-number">Page {{ studyPagination.page }} of {{ studyPagination.totalPages }}</span>
+            <button class="btn btn-secondary btn-sm" [disabled]="!studyPagination.hasNextPage" (click)="setStudyPage(studyPagination.page + 1)">
+              Next
+            </button>
+          </div>
         </div>
       </section>
 
@@ -407,6 +539,145 @@ import { ToastService } from '../../core/services/toast.service';
       gap: 0.75rem;
     }
 
+    .section-subtext {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .study-time-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .sort-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .sort-selector select {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius);
+      outline: none;
+      font-size: 0.8125rem;
+    }
+
+    .sort-dir-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.45rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .sort-dir-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-glow);
+    }
+
+    .clickable-header {
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease;
+    }
+
+    .clickable-header:hover {
+      color: var(--text-primary);
+    }
+
+    .sort-indicator {
+      margin-left: 0.25rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .focus-pill {
+      display: inline-block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    .focus-pill.highlight {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .focus-pill.overall.highlight {
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .loading-state, .error-state {
+      padding: 3rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.875rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .error-state svg {
+      color: var(--danger, #ef4444);
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .page-number {
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
     @media (max-width: 768px) {
       .admin-container {
         padding: 1.25rem 1rem;
@@ -415,6 +686,26 @@ import { ToastService } from '../../core/services/toast.service';
       .admin-stats-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
+      }
+
+      .study-time-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-bar {
+        max-width: 100% !important;
+      }
+
+      .pagination-bar {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+
+      .pagination-controls {
+        justify-content: center;
       }
     }
   `]
@@ -426,14 +717,105 @@ export class AdminComponent implements OnInit {
   users: AdminUser[] = [];
   searchQuery = '';
 
+  // Study Time state
+  studyUsers: AdminStudyTimeUser[] = [];
+  studySearchQuery = '';
+  studySortBy: string = 'todayDuration';
+  studySortOrder: 'asc' | 'desc' = 'desc';
+  studyPage = 1;
+  studyLimit = 10;
+  studyPagination: StudyTimePagination = {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    hasPrevPage: false,
+    hasNextPage: false,
+  };
+  isStudyLoading = false;
+  studyError = '';
+  private searchDebounceTimer: any = null;
+
   // Modal State
   showBanModal = false;
   showDeleteModal = false;
   selectedUser: AdminUser | null = null;
   banReason = '';
 
+  get userTimeZone(): string {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch {
+      return 'UTC';
+    }
+  }
+
   ngOnInit() {
     this.loadUsers();
+    this.loadStudyTime();
+  }
+
+  loadStudyTime() {
+    this.isStudyLoading = true;
+    this.studyError = '';
+
+    this.adminService.getStudyTime({
+      page: this.studyPage,
+      limit: this.studyLimit,
+      search: this.studySearchQuery.trim(),
+      sortBy: this.studySortBy,
+      sortOrder: this.studySortOrder,
+      timeZone: this.userTimeZone,
+    }).subscribe({
+      next: res => {
+        this.isStudyLoading = false;
+        if (res.success) {
+          this.studyUsers = res.users;
+          this.studyPagination = res.pagination;
+        }
+      },
+      error: err => {
+        this.isStudyLoading = false;
+        this.studyError = err?.error?.message || 'Failed to load study time records.';
+      }
+    });
+  }
+
+  onStudySearchInput() {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+    this.searchDebounceTimer = setTimeout(() => {
+      this.studyPage = 1;
+      this.loadStudyTime();
+    }, 300);
+  }
+
+  changeStudySort(column: string) {
+    if (this.studySortBy === column) {
+      this.toggleStudySortOrder();
+    } else {
+      this.studySortBy = column;
+      this.studySortOrder = 'desc';
+      this.studyPage = 1;
+      this.loadStudyTime();
+    }
+  }
+
+  toggleStudySortOrder() {
+    this.studySortOrder = this.studySortOrder === 'desc' ? 'asc' : 'desc';
+    this.studyPage = 1;
+    this.loadStudyTime();
+  }
+
+  setStudyPage(page: number) {
+    if (page < 1 || page > this.studyPagination.totalPages) return;
+    this.studyPage = page;
+    this.loadStudyTime();
+  }
+
+  getStudyShowingEnd(): number {
+    return Math.min(this.studyPagination.page * this.studyPagination.limit, this.studyPagination.total);
   }
 
   loadUsers() {

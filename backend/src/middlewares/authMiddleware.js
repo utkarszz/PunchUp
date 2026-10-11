@@ -48,4 +48,28 @@ const protect = async (req, res, next) => {
   }
 };
 
+const optionalProtect = async (req, res, next) => {
+  try {
+    let token;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) {
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select("-__v");
+    next();
+  } catch (error) {
+    // If token is invalid or expired, continue without req.user
+    next();
+  }
+};
+
+protect.optional = optionalProtect;
 module.exports = protect;

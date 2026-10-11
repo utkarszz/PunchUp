@@ -7,6 +7,7 @@ const {
   adminBanUser,
   adminUnbanUser,
   getUserTasksForAdmin,
+  getAdminStudyTime,
 } = require("../controllers/adminController");
 
 const router = express.Router();
@@ -16,6 +17,7 @@ router.use(protect);
 router.use(adminOnly);
 
 router.get("/users", getAllUsers);
+router.get("/study-time", getAdminStudyTime);
 router.delete("/users/:userId", adminDeleteUser);
 router.post("/users/:userId/ban", adminBanUser);
 router.post("/users/:userId/unban", adminUnbanUser);

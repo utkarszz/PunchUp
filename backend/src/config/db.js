@@ -12,6 +12,8 @@ const connectDB = async () => {
     });
     const { startScheduler } = require('../services/reminderScheduler');
     startScheduler();
+    const { startRecurringScheduler } = require('../services/recurringTaskScheduler');
+    startRecurringScheduler();
   } catch(error){
     console.error('MongoDB connection error:');
     console.error(error.message);

@@ -139,6 +139,37 @@ import { LeagueBadgeComponent, LEAGUES } from '../../shared/components/league-ba
           <p>Complete workspace tasks to earn points and climb the ranks!</p>
         </div>
 
+        <!-- Your Personal Rank Summary (Pinned when available) -->
+        <div class="card your-rank-summary-card animate-slide-up" *ngIf="!isLoading && currentUserPointsRank">
+          <div class="your-rank-summary-header">
+            <span class="your-rank-summary-tag">Your Standing</span>
+            <span class="your-rank-standing-status" *ngIf="isUserInTopPointsList">Currently in Top 50</span>
+            <span class="your-rank-standing-status outside" *ngIf="!isUserInTopPointsList">Outside Top 50</span>
+          </div>
+          <div class="your-rank-summary-body">
+            <div class="your-rank-badge-box">
+              <span class="your-rank-hash">#</span>
+              <span class="your-rank-digits">{{ currentUserPointsRank.rank }}</span>
+            </div>
+            <div class="your-rank-user-details">
+              <div class="your-rank-title-row">
+                <span class="your-rank-name">{{ currentUserPointsRank.displayName || currentUserPointsRank.username }}</span>
+                <span class="you-pill">You</span>
+                <app-league-badge [league]="currentUserPointsRank.league"></app-league-badge>
+              </div>
+              <span class="your-rank-handle">&#64;{{ currentUserPointsRank.username }}</span>
+            </div>
+            <div class="your-rank-score-box">
+              <span class="your-rank-score-val">
+                {{ activeTab === 'weekly' ? (currentUserPointsRank.weeklyPoints || 0) : currentUserPointsRank.totalPoints }}
+              </span>
+              <span class="your-rank-score-lbl">
+                {{ activeTab === 'weekly' ? 'pts this week' : 'pts lifetime' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- Points Leaderboard List -->
         <div class="leaderboard-list" *ngIf="!isLoading && entries.length > 0">
           <div
@@ -258,6 +289,33 @@ import { LeagueBadgeComponent, LEAGUES } from '../../shared/components/league-ba
           </svg>
           <h3>No focus sessions yet</h3>
           <p>Start a focus session from the Focus tab to appear here!</p>
+        </div>
+
+        <!-- Your Personal Focus Rank Summary (Pinned when available) -->
+        <div class="card your-rank-summary-card animate-slide-up" *ngIf="!isFocusLoading && currentUserFocusRank">
+          <div class="your-rank-summary-header">
+            <span class="your-rank-summary-tag">Your Standing</span>
+            <span class="your-rank-standing-status" *ngIf="isUserInTopFocusList">Currently in Top 50</span>
+            <span class="your-rank-standing-status outside" *ngIf="!isUserInTopFocusList">Outside Top 50</span>
+          </div>
+          <div class="your-rank-summary-body">
+            <div class="your-rank-badge-box">
+              <span class="your-rank-hash">#</span>
+              <span class="your-rank-digits">{{ currentUserFocusRank.rank }}</span>
+            </div>
+            <div class="your-rank-user-details">
+              <div class="your-rank-title-row">
+                <span class="your-rank-name">{{ currentUserFocusRank.displayName || currentUserFocusRank.username }}</span>
+                <span class="you-pill">You</span>
+                <app-league-badge [league]="currentUserFocusRank.league"></app-league-badge>
+              </div>
+              <span class="your-rank-handle">&#64;{{ currentUserFocusRank.username }}</span>
+            </div>
+            <div class="your-rank-score-box">
+              <span class="your-rank-score-val focus-time-val">{{ currentUserFocusRank.focusTime }}</span>
+              <span class="your-rank-score-lbl">focus time</span>
+            </div>
+          </div>
         </div>
 
         <!-- Focus Time Leaderboard List -->
@@ -438,24 +496,163 @@ import { LeagueBadgeComponent, LEAGUES } from '../../shared/components/league-ba
     }
 
     .rank-card.current-user-card {
-      border-color: rgba(199, 199, 204, 0.35);
-      background: rgba(199, 199, 204, 0.04);
+      border-color: rgba(245, 158, 11, 0.45);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%);
+      box-shadow: 0 0 16px -4px rgba(245, 158, 11, 0.15);
+      position: relative;
     }
 
-    /* Top 3 Glow */
+    .rank-card.current-user-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #f59e0b;
+      border-radius: var(--radius) 0 0 var(--radius);
+    }
+
+    /* Top 3 Medals take precedence for medal aesthetics while keeping golden user accent if applicable */
     .rank-card.top-one {
-      border-color: rgba(234, 179, 8, 0.35);
-      background: linear-gradient(90deg, rgba(234, 179, 8, 0.05) 0%, var(--surface) 100%);
+      border-color: rgba(234, 179, 8, 0.45);
+      background: linear-gradient(90deg, rgba(234, 179, 8, 0.08) 0%, var(--surface) 100%);
     }
 
     .rank-card.top-two {
-      border-color: rgba(203, 213, 225, 0.3);
-      background: linear-gradient(90deg, rgba(203, 213, 225, 0.04) 0%, var(--surface) 100%);
+      border-color: rgba(203, 213, 225, 0.4);
+      background: linear-gradient(90deg, rgba(203, 213, 225, 0.06) 0%, var(--surface) 100%);
     }
 
     .rank-card.top-three {
-      border-color: rgba(217, 119, 6, 0.3);
-      background: linear-gradient(90deg, rgba(217, 119, 6, 0.04) 0%, var(--surface) 100%);
+      border-color: rgba(217, 119, 6, 0.4);
+      background: linear-gradient(90deg, rgba(217, 119, 6, 0.06) 0%, var(--surface) 100%);
+    }
+
+    /* Your Personal Rank Summary Card */
+    .your-rank-summary-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(20, 20, 25, 0.95) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-lg, 16px);
+      padding: 1.15rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      box-shadow: 0 4px 20px -6px rgba(245, 158, 11, 0.12);
+    }
+
+    .your-rank-summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .your-rank-summary-tag {
+      font-size: 0.725rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #f59e0b;
+    }
+
+    .your-rank-standing-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .your-rank-standing-status.outside {
+      color: #f59e0b;
+    }
+
+    .your-rank-summary-body {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .your-rank-badge-box {
+      display: flex;
+      align-items: baseline;
+      font-family: var(--font-display);
+      color: #f59e0b;
+      min-width: 50px;
+    }
+
+    .your-rank-hash {
+      font-size: 1.1rem;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+
+    .your-rank-digits {
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .your-rank-user-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+
+    .your-rank-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .your-rank-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+
+    .you-pill {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #000;
+      background: #f59e0b;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    .your-rank-handle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .your-rank-score-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .your-rank-score-val {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #f59e0b;
+      line-height: 1.1;
+    }
+
+    .your-rank-score-val.focus-time-val {
+      font-family: monospace;
+      color: #818cf8;
+    }
+
+    .your-rank-score-lbl {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
     }
 
     /* Rank Badge Col */
@@ -823,14 +1020,26 @@ export class LeaderboardComponent implements OnInit {
   public selectedLeague = 'Gold';
   public allLeagues = LEAGUES;
   public entries: LeaderboardEntry[] = [];
+  public currentUserPointsRank: LeaderboardEntry | null = null;
   public isLoading = false;
 
   // Focus leaderboard state
   public focusPeriod: 'daily' | 'weekly' | 'overall' = 'daily';
   public focusEntries: FocusLeaderboardEntry[] = [];
+  public currentUserFocusRank: FocusLeaderboardEntry | null = null;
   public isFocusLoading = false;
 
   public currentUsername = '';
+
+  public get isUserInTopPointsList(): boolean {
+    if (!this.currentUsername || !this.entries.length) return false;
+    return this.entries.some(e => e.username === this.currentUsername);
+  }
+
+  public get isUserInTopFocusList(): boolean {
+    if (!this.currentUsername || !this.focusEntries.length) return false;
+    return this.focusEntries.some(e => e.username === this.currentUsername);
+  }
 
   ngOnInit() {
     this.authService.currentUser$.subscribe(user => {
@@ -869,20 +1078,33 @@ export class LeaderboardComponent implements OnInit {
 
   private loadLeaderboard() {
     this.isLoading = true;
+    this.currentUserPointsRank = null;
 
     if (this.activeTab === 'weekly') {
       this.leaderboardService.getWeeklyLeaderboard().subscribe({
-        next: (res) => { this.entries = res.leaderboard || []; this.isLoading = false; },
+        next: (res) => {
+          this.entries = res.leaderboard || [];
+          this.currentUserPointsRank = res.currentUserRank || null;
+          this.isLoading = false;
+        },
         error: () => { this.isLoading = false; }
       });
     } else if (this.activeTab === 'overall') {
       this.leaderboardService.getOverallLeaderboard().subscribe({
-        next: (res) => { this.entries = res.leaderboard || []; this.isLoading = false; },
+        next: (res) => {
+          this.entries = res.leaderboard || [];
+          this.currentUserPointsRank = res.currentUserRank || null;
+          this.isLoading = false;
+        },
         error: () => { this.isLoading = false; }
       });
     } else if (this.activeTab === 'league') {
       this.leaderboardService.getLeagueLeaderboard(this.selectedLeague).subscribe({
-        next: (res) => { this.entries = res.leaderboard || []; this.isLoading = false; },
+        next: (res) => {
+          this.entries = res.leaderboard || [];
+          this.currentUserPointsRank = res.currentUserRank || null;
+          this.isLoading = false;
+        },
         error: () => { this.isLoading = false; }
       });
     }
@@ -890,8 +1112,14 @@ export class LeaderboardComponent implements OnInit {
 
   private loadFocusLeaderboard() {
     this.isFocusLoading = true;
+    this.currentUserFocusRank = null;
+
     this.leaderboardService.getFocusLeaderboard(this.focusPeriod).subscribe({
-      next: (res) => { this.focusEntries = res.leaderboard || []; this.isFocusLoading = false; },
+      next: (res) => {
+        this.focusEntries = res.leaderboard || [];
+        this.currentUserFocusRank = res.currentUserRank || null;
+        this.isFocusLoading = false;
+      },
       error: () => { this.isFocusLoading = false; }
     });
   }

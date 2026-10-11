@@ -138,6 +138,14 @@ import { ReminderService } from '../../core/services/reminder.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+                <span class="recurring-tag" *ngIf="task.recurringTaskId" title="Recurring Daily Task">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Daily</span>
+                </span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
                 <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
@@ -183,6 +191,14 @@ import { ReminderService } from '../../core/services/reminder.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+                <span class="recurring-tag" *ngIf="task.recurringTaskId" title="Recurring Daily Task">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Daily</span>
+                </span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
                 <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
@@ -228,6 +244,14 @@ import { ReminderService } from '../../core/services/reminder.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+                <span class="recurring-tag" *ngIf="task.recurringTaskId" title="Recurring Daily Task">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Daily</span>
+                </span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
                 <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
@@ -273,6 +297,14 @@ import { ReminderService } from '../../core/services/reminder.service';
               <p class="task-desc">{{ task.description || 'No description.' }}</p>
               <div class="task-card-footer">
                 <span [class]="'badge badge-' + task.priority">{{ task.priority }}</span>
+                <span class="recurring-tag" *ngIf="task.recurringTaskId" title="Recurring Daily Task">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Daily</span>
+                </span>
                 <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
                 <span class="due-date-badge" [class.overdue-badge]="isOverdue(task)" *ngIf="task.dueDate">Due {{ formatDueDate(task.dueDate) }}</span>
                 <span class="reminder-badge" *ngIf="task.reminderEnabled && task.reminderInterval" [title]="'Reminder: Every ' + task.reminderInterval + 'h'">
@@ -387,6 +419,41 @@ import { ReminderService } from '../../core/services/reminder.service';
               <button type="button" class="btn-preset" (click)="setDuePreset(1)">+1h</button>
               <button type="button" class="btn-preset" (click)="setDuePreset(3)">+3h</button>
               <button type="button" class="btn-preset" (click)="setDuePreset(24)">Tomorrow</button>
+            </div>
+
+            <!-- Recurrence Settings Group -->
+            <div class="recurrence-box">
+              <label class="recurrence-toggle-label">
+                <input type="checkbox" [(ngModel)]="modalTask.isRecurring" name="inline_isRecurring" />
+                <span class="recurrence-toggle-text">
+                  <strong>Repeat Daily</strong>
+                  <span class="recurrence-subtext">Automatically create this task every day</span>
+                </span>
+              </label>
+
+              <div class="recurrence-details-grid" *ngIf="modalTask.isRecurring">
+                <div class="form-group">
+                  <label>Creation Time</label>
+                  <input type="time" [(ngModel)]="modalTask.creationTime" name="inline_creationTime" />
+                  <span class="form-hint">Default 07:00 AM in your timezone</span>
+                </div>
+
+                <div class="form-group">
+                  <label>Timezone</label>
+                  <input type="text" [value]="userTimeZone" readonly class="timezone-readonly-input" />
+                  <span class="form-hint">Detected system timezone</span>
+                </div>
+
+                <div class="form-group">
+                  <label>Start Date (optional)</label>
+                  <input type="date" [(ngModel)]="modalTask.startDate" name="inline_startDate" />
+                </div>
+
+                <div class="form-group">
+                  <label>End Date (optional)</label>
+                  <input type="date" [(ngModel)]="modalTask.endDate" name="inline_endDate" />
+                </div>
+              </div>
             </div>
 
             <!-- Permission prompt card -->
@@ -620,6 +687,41 @@ import { ReminderService } from '../../core/services/reminder.service';
                 <label>Due Date & Time (optional)</label>
                 <input type="datetime-local" [(ngModel)]="modalTask.dueDate" name="dueDate" />
                 <span class="form-hint">Leave blank to automatically set deadline to 24 hours from creation.</span>
+              </div>
+            </div>
+
+            <!-- Recurrence Settings (Available during creation) -->
+            <div class="recurrence-box" *ngIf="!isEditMode">
+              <label class="recurrence-toggle-label">
+                <input type="checkbox" [(ngModel)]="modalTask.isRecurring" name="modal_isRecurring" />
+                <span class="recurrence-toggle-text">
+                  <strong>Repeat Daily</strong>
+                  <span class="recurrence-subtext">Automatically create this task every day</span>
+                </span>
+              </label>
+
+              <div class="recurrence-details-grid" *ngIf="modalTask.isRecurring">
+                <div class="form-group">
+                  <label>Creation Time</label>
+                  <input type="time" [(ngModel)]="modalTask.creationTime" name="modal_creationTime" />
+                  <span class="form-hint">Default 07:00 AM in your timezone</span>
+                </div>
+
+                <div class="form-group">
+                  <label>Timezone</label>
+                  <input type="text" [value]="userTimeZone" readonly class="timezone-readonly-input" />
+                  <span class="form-hint">Detected system timezone</span>
+                </div>
+
+                <div class="form-group">
+                  <label>Start Date (optional)</label>
+                  <input type="date" [(ngModel)]="modalTask.startDate" name="modal_startDate" />
+                </div>
+
+                <div class="form-group">
+                  <label>End Date (optional)</label>
+                  <input type="date" [(ngModel)]="modalTask.endDate" name="modal_endDate" />
+                </div>
               </div>
             </div>
 
@@ -1501,6 +1603,76 @@ import { ReminderService } from '../../core/services/reminder.service';
       line-height: 1.3;
     }
 
+    .recurring-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 4px;
+      padding: 0.125rem 0.45rem;
+      line-height: 1.3;
+    }
+
+    .recurrence-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+    }
+
+    .recurrence-toggle-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .recurrence-toggle-label input[type="checkbox"] {
+      margin-top: 0.2rem;
+      width: 1.1rem;
+      height: 1.1rem;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .recurrence-toggle-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .recurrence-toggle-text strong {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+
+    .recurrence-subtext {
+      font-size: 0.775rem;
+      color: var(--text-secondary);
+    }
+
+    .recurrence-details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .timezone-readonly-input {
+      background: rgba(255, 255, 255, 0.04) !important;
+      color: var(--text-secondary) !important;
+      cursor: default;
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1714,7 +1886,12 @@ export class TasksComponent implements OnInit, OnDestroy {
   // Modal control
   public showModal = false;
   public isEditMode = false;
-  public modalTask: Partial<Task> = this.resetModalTask();
+  public modalTask: Partial<Task> & {
+    isRecurring?: boolean;
+    creationTime?: string;
+    startDate?: string;
+    endDate?: string;
+  } = this.resetModalTask();
   public showPermissionPrompt = false;
   public permissionDeniedMessage = '';
   private activeEditingId: string | null = null;
@@ -1996,7 +2173,20 @@ export class TasksComponent implements OnInit, OnDestroy {
     return `${datePart}, ${timePart}`;
   }
 
-  private resetModalTask(): Partial<Task> {
+  public get userTimeZone(): string {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch {
+      return 'UTC';
+    }
+  }
+
+  private resetModalTask(): Partial<Task> & {
+    isRecurring?: boolean;
+    creationTime?: string;
+    startDate?: string;
+    endDate?: string;
+  } {
     return {
       title: '',
       description: '',
@@ -2005,6 +2195,10 @@ export class TasksComponent implements OnInit, OnDestroy {
       dueDate: '',
       reminderInterval: 0,
       reminderEnabled: false,
+      isRecurring: false,
+      creationTime: '07:00',
+      startDate: '',
+      endDate: '',
     };
   }
 
@@ -2126,10 +2320,23 @@ export class TasksComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      this.taskService.createTask(payload).subscribe((response: any) => {
+      const createPayload: any = { ...payload };
+      if (this.modalTask.isRecurring) {
+        createPayload.isRecurring = true;
+        createPayload.creationTime = this.modalTask.creationTime || '07:00';
+        createPayload.timeZone = this.userTimeZone;
+        if (this.modalTask.startDate) createPayload.startDate = this.modalTask.startDate;
+        if (this.modalTask.endDate) createPayload.endDate = this.modalTask.endDate;
+      }
+
+      this.taskService.createTask(createPayload).subscribe((response: any) => {
         if (response.success) {
           this.loadTasks();
-          this.toastService.showSuccess('Task created successfully!');
+          if (this.modalTask.isRecurring) {
+            this.toastService.showSuccess('Daily recurring task created!');
+          } else {
+            this.toastService.showSuccess('Task created successfully!');
+          }
           // Return user to hub after creation
           this.setFocusView('hub');
         }
@@ -2169,13 +2376,32 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   public onDelete(id: string) {
-    if (confirm('Are you sure you want to delete this task?')) {
-      this.taskService.deleteTask(id).subscribe((response: any) => {
-        if (response.success) {
-          this.loadTasks();
-          this.toastService.showInfo('Task deleted');
+    const taskToDelete = this.allTasks.find(t => t._id === id);
+    let stopRecurrence = false;
+
+    if (taskToDelete?.recurringTaskId) {
+      const choice = confirm(
+        'This is a recurring task.\n\nClick OK to delete today\'s task and keep the daily recurrence active.\nClick Cancel if you want to also stop future recurrence.'
+      );
+      if (!choice) {
+        const confirmStop = confirm('Do you want to stop all future daily creations for this recurring task?');
+        if (confirmStop) {
+          stopRecurrence = true;
+        } else {
+          return; // User cancelled entirely
         }
-      });
+      }
+    } else {
+      if (!confirm('Are you sure you want to delete this task?')) {
+        return;
+      }
     }
+
+    this.taskService.deleteTask(id, false, stopRecurrence).subscribe((response: any) => {
+      if (response.success) {
+        this.loadTasks();
+        this.toastService.showInfo(stopRecurrence ? 'Task deleted and recurrence stopped' : 'Task deleted');
+      }
+    });
   }
 }

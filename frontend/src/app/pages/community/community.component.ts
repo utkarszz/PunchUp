@@ -144,7 +144,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
         </div>
 
         <!-- Composer -->
-        <div class="card composer-card animate-slide-up" *ngIf="authService.currentUser$ | async as me">
+        <div class="card composer-card animate-slide-up" [class.has-active-mention]="activeMentionContext === 'post' && isMentionOpen" *ngIf="authService.currentUser$ | async as me">
           <div class="composer-top">
             <img
               [src]="me.profilePicture || 'assets/default-avatar.png'"
@@ -231,7 +231,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
         <!-- Posts Feed -->
         <div class="feed-list" *ngIf="!isLoading && posts.length > 0">
-          <article class="card post-card animate-slide-up" *ngFor="let post of posts; let i = index">
+          <article class="card post-card animate-slide-up" [class.has-active-mention]="isPostMentionActive(post._id)" *ngFor="let post of posts; let i = index">
             <div class="post-header">
               <div class="post-author-wrapper">
                 <a [routerLink]="['/user', post.user.username]" class="post-avatar-link">
@@ -321,26 +321,32 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   <p>No comments yet. Be the first to share your thoughts!</p>
                 </div>
               </div>
-              <div class="comment-input-row" style="position: relative;">
-                <input
-                  type="text"
-                  class="input"
-                  [(ngModel)]="commentDraft[post._id]"
-                  (input)="onCommentInput($event, post._id)"
-                  (keydown)="onCommentKeyDown($event, post)"
-                  placeholder="Write a comment... Type @ to mention"
-                  #mainCommentInput
-                />
-                <button class="btn btn-primary btn-sm" (click)="submitComment(post)" [disabled]="!commentDraft[post._id]?.trim()">Send</button>
-                <app-mention-dropdown
-                  [users]="mentionUsers"
-                  [isOpen]="activeMentionContext === 'comment_' + post._id && isMentionOpen"
-                  [selectedIndex]="mentionSelectedIndex"
-                  [isLoading]="isMentionLoading"
-                  position="top"
-                  (userSelected)="onSelectMentionUser($event, 'comment_' + post._id)"
-                  (close)="closeMentionDropdown()"
-                ></app-mention-dropdown>
+              <div class="comment-input-row">
+                <div class="comment-input-wrapper">
+                  <textarea
+                    class="input comment-textarea"
+                    [(ngModel)]="commentDraft[post._id]"
+                    (input)="onCommentInput($event, post._id)"
+                    (keydown)="onCommentKeyDown($event, post)"
+                    placeholder="Write a comment... Type @ to mention"
+                    rows="1"
+                    #mainCommentInput
+                  ></textarea>
+                  <app-mention-dropdown
+                    [users]="mentionUsers"
+                    [isOpen]="activeMentionContext === 'comment_' + post._id && isMentionOpen"
+                    [selectedIndex]="mentionSelectedIndex"
+                    [isLoading]="isMentionLoading"
+                    position="top"
+                    (userSelected)="onSelectMentionUser($event, 'comment_' + post._id)"
+                    (close)="closeMentionDropdown()"
+                  ></app-mention-dropdown>
+                </div>
+                <button
+                  class="btn btn-primary btn-sm comment-submit-btn"
+                  (click)="submitComment(post)"
+                  [disabled]="!commentDraft[post._id]?.trim()"
+                >Send</button>
               </div>
             </div>
 
@@ -417,29 +423,31 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                         <span>Replying to <strong>&#64;{{ c.user?.username }}</strong></span>
                         <button class="btn-icon close-reply-btn" (click)="cancelReply(post._id)" title="Cancel">×</button>
                       </div>
-                      <div class="reply-input-row" style="position: relative;">
-                        <input
-                          type="text"
-                          class="input input-sm"
-                          [(ngModel)]="replyDraftMap[post._id]"
-                          (input)="onReplyInput($event, post._id, c)"
-                          (keydown)="onReplyKeyDown($event, post, c)"
-                          [placeholder]="'Reply to @' + c.user?.username + '...'"
-                          #replyInputEl
-                        />
+                      <div class="reply-input-row">
+                        <div class="reply-input-wrapper">
+                          <input
+                            type="text"
+                            class="input input-sm reply-input"
+                            [(ngModel)]="replyDraftMap[post._id]"
+                            (input)="onReplyInput($event, post._id, c)"
+                            (keydown)="onReplyKeyDown($event, post, c)"
+                            [placeholder]="'Reply to @' + c.user?.username + '...'"
+                            #replyInputEl
+                          />
+                          <app-mention-dropdown
+                            [users]="mentionUsers"
+                            [isOpen]="activeMentionContext === 'reply_' + c._id && isMentionOpen"
+                            [selectedIndex]="mentionSelectedIndex"
+                            [isLoading]="isMentionLoading"
+                            position="top"
+                            (userSelected)="onSelectMentionUser($event, 'reply_' + c._id)"
+                            (close)="closeMentionDropdown()"
+                          ></app-mention-dropdown>
+                        </div>
                         <button class="btn btn-primary btn-sm" (click)="submitReply(post, c)" [disabled]="!replyDraftMap[post._id]?.trim()">
                           Reply
                         </button>
                       </div>
-                      <app-mention-dropdown
-                        [users]="mentionUsers"
-                        [isOpen]="activeMentionContext === 'reply_' + c._id && isMentionOpen"
-                        [selectedIndex]="mentionSelectedIndex"
-                        [isLoading]="isMentionLoading"
-                        position="top"
-                        (userSelected)="onSelectMentionUser($event, 'reply_' + post._id)"
-                        (close)="closeMentionDropdown()"
-                      ></app-mention-dropdown>
                     </div>
                   </div>
                 </div>
@@ -1283,13 +1291,24 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     .reply-input-row {
       display: flex;
       gap: 0.4rem;
+      align-items: center;
     }
 
-    .reply-input-row .input-sm {
+    .reply-input-wrapper {
+      position: relative;
       flex: 1;
-      padding: 0.35rem 0.6rem;
+      min-width: 0;
+      display: flex;
+    }
+
+    .reply-input-wrapper .input-sm {
+      width: 100%;
+      padding: 0.4rem 0.65rem;
       font-size: 0.8125rem;
       border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
     }
 
     /* Replies Container */
@@ -1351,12 +1370,51 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     .comment-input-row {
       display: flex;
       gap: 0.5rem;
+      align-items: flex-end;
+      width: 100%;
+      margin-top: 0.35rem;
     }
 
-    .comment-input-row .input {
+    .comment-input-wrapper {
+      position: relative;
       flex: 1;
-      padding: 0.5rem 0.75rem;
+      min-width: 0;
+      display: flex;
+    }
+
+    .comment-textarea {
+      width: 100%;
+      min-height: 40px;
+      max-height: 120px;
+      resize: none;
+      overflow-y: auto;
+      padding: 0.5625rem 0.875rem;
       font-size: 0.875rem;
+      font-family: var(--font-sans);
+      line-height: 1.45;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .comment-textarea:focus {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 0 1px rgba(199, 199, 204, 0.12), var(--glow-silver-sm);
+    }
+
+    .comment-submit-btn {
+      height: 40px;
+      flex-shrink: 0;
+      align-self: flex-end;
+      padding: 0 1.1rem;
+      font-weight: 500;
+    }
+
+    .has-active-mention {
+      z-index: 50 !important;
     }
 
     /* Suggestions sidebar */
@@ -1513,6 +1571,14 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       .post-time {
         font-size: 0.6875rem;
       }
+      .comment-submit-btn {
+        padding: 0 0.75rem;
+        font-size: 0.8125rem;
+      }
+      .comment-textarea {
+        padding: 0.5rem 0.65rem;
+        font-size: 0.8125rem;
+      }
     }
 
     @media (max-width: 360px) {
@@ -1524,6 +1590,13 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       }
       .post-display-name {
         max-width: 85px;
+      }
+      .comment-input-row {
+        gap: 0.35rem;
+      }
+      .comment-submit-btn {
+        padding: 0 0.6rem;
+        font-size: 0.75rem;
       }
     }
   `]
@@ -1781,8 +1854,22 @@ export class CommunityComponent implements OnInit, OnDestroy {
     }
   }
 
+  isPostMentionActive(postId: string): boolean {
+    if (!this.isMentionOpen || !this.activeMentionContext) return false;
+    if (this.activeMentionContext === 'comment_' + postId) return true;
+    if (this.activeMentionContext.startsWith('reply_')) {
+      const commentId = this.activeMentionContext.replace('reply_', '');
+      return this.activeReplyMap[postId] === commentId;
+    }
+    return false;
+  }
+
   onCommentInput(event: Event, postId: string) {
-    const target = event.target as HTMLInputElement;
+    const target = event.target as HTMLTextAreaElement;
+    if (target) {
+      target.style.height = 'auto';
+      target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+    }
     const text = this.commentDraft[postId] || '';
     this.handleMentionInput(text, target, 'comment_' + postId);
   }
@@ -1791,7 +1878,7 @@ export class CommunityComponent implements OnInit, OnDestroy {
     if (this.handleMentionKeyDown(event, 'comment_' + post._id)) {
       return;
     }
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.submitComment(post);
     }
