@@ -2115,6 +2115,17 @@ export class CommunityComponent implements OnInit, OnDestroy {
     }
 
     this.postService.likeComment(comment._id).subscribe({
+      next: (res) => {
+        if (res && res.success) {
+          if (res.liked) {
+            if (!comment.likes!.includes(this.currentUserId)) {
+              comment.likes!.push(this.currentUserId);
+            }
+          } else {
+            comment.likes = comment.likes!.filter(id => id !== this.currentUserId);
+          }
+        }
+      },
       error: () => {
         if (wasLiked) {
           comment.likes!.push(this.currentUserId);
@@ -2126,7 +2137,9 @@ export class CommunityComponent implements OnInit, OnDestroy {
   }
 
   canDeleteComment(post: Post, comment: Comment): boolean {
-    return comment.user._id === this.currentUserId || post.user._id === this.currentUserId;
+    const me = this.authService.currentUserValue;
+    const isAdmin = me?.role === 'admin';
+    return comment.user._id === this.currentUserId || post.user._id === this.currentUserId || !!isAdmin;
   }
 
   sharePost(post: Post) {

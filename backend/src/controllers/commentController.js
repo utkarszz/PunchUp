@@ -187,37 +187,78 @@ const toggleCommentLike = async (req, res) => {
       comment.likes = [];
     }
 
-    const userIdStr = req.user._id.toString();
+    const userId = req.user._id;
+    const userIdStr = userId.toString();
     const alreadyLiked = comment.likes.some(
       (id) => id.toString() === userIdStr
     );
 
+    let updatedComment;
     if (alreadyLiked) {
       comment.likes = comment.likes.filter(
         (id) => id.toString() !== userIdStr
       );
+      if (typeof comment.save === 'function') {
+        await comment.save();
+      }
+      if (typeof Comment.findByIdAndUpdate === 'function') {
+        try {
+          updatedComment = await Comment.findByIdAndUpdate(
+            comment._id,
+            { $pull: { likes: userId } },
+            { new: true }
+          );
+        } catch (_) {}
+      }
     } else {
-      comment.likes.push(req.user._id);
+      comment.likes.push(userId);
+      if (typeof comment.save === 'function') {
+        await comment.save();
+      }
+      if (typeof Comment.findByIdAndUpdate === 'function') {
+        try {
+          updatedComment = await Comment.findByIdAndUpdate(
+            comment._id,
+            { $addToSet: { likes: userId } },
+            { new: true }
+          );
+        } catch (_) {}
+      }
     }
 
-    await comment.save();
+    const liked = !alreadyLiked;
+    const likesCount = (updatedComment && updatedComment.likes) ? updatedComment.likes.length : comment.likes.length;
 
     // Trigger Notification for Comment Like (if newly liked and not own comment)
-    if (!alreadyLiked && comment.user.toString() !== userIdStr) {
-      await Notification.create({
-        recipient: comment.user,
-        sender: req.user._id,
-        type: "comment_like",
-        post: comment.post,
-        comment: comment._id,
-        message: `${req.user.displayName || req.user.username} liked your comment.`,
-      });
+    if (liked && comment.user.toString() !== userIdStr) {
+      let existingNotif = null;
+      if (typeof Notification.findOne === 'function') {
+        try {
+          existingNotif = await Notification.findOne({
+            recipient: comment.user,
+            sender: req.user._id,
+            type: "comment_like",
+            comment: comment._id,
+          });
+        } catch (_) {}
+      }
+
+      if (!existingNotif) {
+        await Notification.create({
+          recipient: comment.user,
+          sender: req.user._id,
+          type: "comment_like",
+          post: comment.post,
+          comment: comment._id,
+          message: `${req.user.displayName || req.user.username} liked your comment.`,
+        });
+      }
     }
 
     res.status(200).json({
       success: true,
-      liked: !alreadyLiked,
-      likesCount: comment.likes.length,
+      liked,
+      likesCount,
     });
   } catch (error) {
     res.status(500).json({
@@ -246,7 +287,11 @@ const deleteComment = async (req, res) => {
     const isPostAuthor =
       post && post.user.toString() === req.user._id.toString();
 
-    if (!isCommentAuthor && !isPostAuthor) {
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'utkarzz1705@gmail.com';
+    const isAdmin =
+      req.user.role === 'admin' || req.user.email === ADMIN_EMAIL;
+
+    if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to delete this comment",

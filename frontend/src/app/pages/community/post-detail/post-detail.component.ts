@@ -1254,6 +1254,17 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     }
 
     this.postService.likeComment(comment._id).subscribe({
+      next: (res) => {
+        if (res && res.success) {
+          if (res.liked) {
+            if (!comment.likes!.includes(this.currentUserId)) {
+              comment.likes!.push(this.currentUserId);
+            }
+          } else {
+            comment.likes = comment.likes!.filter(id => id !== this.currentUserId);
+          }
+        }
+      },
       error: () => {
         // Rollback
         if (wasLiked) {
@@ -1269,7 +1280,9 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     if (!this.isAuthenticated) return false;
     const isCommentAuthor = comment.user._id === this.currentUserId;
     const isPostAuthor = this.post?.user._id === this.currentUserId;
-    return isCommentAuthor || isPostAuthor;
+    const me = this.authService.currentUserValue;
+    const isAdmin = me?.role === 'admin';
+    return isCommentAuthor || isPostAuthor || !!isAdmin;
   }
 
   deleteComment(commentId: string) {

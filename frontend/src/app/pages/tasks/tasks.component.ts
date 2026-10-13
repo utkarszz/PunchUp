@@ -1625,6 +1625,10 @@ import { ReminderService } from '../../core/services/reminder.service';
       display: flex;
       flex-direction: column;
       gap: 0.875rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .recurrence-toggle-label {
@@ -1657,6 +1661,7 @@ import { ReminderService } from '../../core/services/reminder.service';
     .recurrence-subtext {
       font-size: 0.775rem;
       color: var(--text-secondary);
+      word-break: break-word;
     }
 
     .recurrence-details-grid {
@@ -1665,12 +1670,29 @@ import { ReminderService } from '../../core/services/reminder.service';
       gap: 1rem;
       padding-top: 0.75rem;
       border-top: 1px solid var(--border);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .recurrence-details-grid .form-group {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .recurrence-details-grid input {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
     }
 
     .timezone-readonly-input {
       background: rgba(255, 255, 255, 0.04) !important;
       color: var(--text-secondary) !important;
       cursor: default;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
     .form-row {
@@ -1801,8 +1823,12 @@ import { ReminderService } from '../../core/services/reminder.service';
         min-height: unset;
       }
 
-      .form-row, .form-row-triple {
+      .form-row, .form-row-triple, .recurrence-details-grid {
         grid-template-columns: 1fr;
+      }
+
+      .recurrence-box {
+        padding: 0.875rem;
       }
 
       .form-group-due {
@@ -1825,6 +1851,14 @@ import { ReminderService } from '../../core/services/reminder.service';
         gap: 1rem;
       }
 
+      .inline-form-card {
+        padding: 1rem 0.75rem;
+      }
+
+      .recurrence-box {
+        padding: 0.75rem 0.625rem;
+      }
+
       .task-card {
         padding: 1rem;
         gap: 0.75rem;
@@ -1840,9 +1874,39 @@ import { ReminderService } from '../../core/services/reminder.service';
       }
     }
 
-    @media (max-width: 320px) {
+    @media (max-width: 360px) {
       .tasks-container {
         padding: 0.75rem 0.5rem;
+      }
+
+      .inline-form-card {
+        padding: 0.75rem 0.5rem;
+      }
+
+      .recurrence-box {
+        padding: 0.625rem 0.5rem;
+      }
+
+      .recurrence-toggle-text strong {
+        font-size: 0.85rem;
+      }
+
+      .recurrence-subtext {
+        font-size: 0.725rem;
+      }
+    }
+
+    @media (max-width: 320px) {
+      .tasks-container {
+        padding: 0.5rem 0.35rem;
+      }
+
+      .inline-form-card {
+        padding: 0.5rem 0.35rem;
+      }
+
+      .recurrence-box {
+        padding: 0.5rem 0.35rem;
       }
 
       .task-card {
